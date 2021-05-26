@@ -149,6 +149,7 @@
     >
       <template #header>
         <div
+          v-if="gameData.game.background"
           class="headerBG"
           :style="gameData.game.background"
         >
@@ -191,19 +192,38 @@
             </div>
           </div>
         </div>
+        <div
+          v-else
+          class="headerBG"
+          :style="'background: url('+gameData.game.cover+'); background-size:cover; background-repeat:no-repeat;'"
+        >
+          <div class="coverGame">
+            <div class="gameInfos">
+              <img :src="gameData.game.cover">
+              <p>{{ gameData.label }}</p>
+              <button
+                class="shortLaunch"
+                @click="gameDetails.origin === &quot;bnet&quot; ? openBnetGame(gameData.appid) : openSteamGame(gameData.appid), (gameDetails = false)"
+              >
+                <i class="bi bi-play-fill" />
+                <span>Lancer !</span>
+              </button>
+            </div>
+            <div class="meta">
+              <ul class="metacat">
+                <li>
+                  Metas
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </template>
       <template #body>
-        <div v-html="gameData.game.description" />
-      </template>
-      <template #actions>
-        <!-- <button
-        type="primary"
-        @click="openSteamGame(gameData.appid), (gameDetails = false)"
-      >
-        Lancer {{gameData.game.app_name}}
-      </button> -->
+        <div v-if="gameData.game.description" v-html="gameData.game.description" />
       </template>
     </game-details>
+    
 
     <modal
       v-model="manualAdd"
@@ -263,7 +283,7 @@ const { shell } = require('electron')
 function getValues (obj, key) {
   var objects = []
   for (var i in obj) {
-    if (!Object.prototype.hasOwnProperty.call(i, obj)) continue
+    if (!obj.hasOwnProperty(i)) continue
     if (typeof obj[i] === 'object') {
       objects = objects.concat(getValues(obj[i], key))
     } else if (i === key) {
@@ -668,7 +688,7 @@ p {
     width: auto;
     margin: 20px auto auto auto;
     display: block;
-    color: rgba(white,5%);
+    color: rgba(white,10%);
     ul {
       display: flex;
       vertical-align: middle;
@@ -676,14 +696,17 @@ p {
         margin: auto 10px;
         font-size: 1.1em;
         text-transform: uppercase;
-        font-weight: 200;
+        font-weight: normal;
+        transition: all 0.5s;
         &:hover {
           color: rgba(white,100%);
           cursor: pointer;
+          transform: scale(1.1);
         }
         &.active {
           color: rgba(white,100%);
-          font-weight: normal;
+          font-weight: 600;
+          transform: scale(1.1);
         }
       }
     }

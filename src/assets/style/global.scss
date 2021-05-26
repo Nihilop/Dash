@@ -23,10 +23,21 @@ body, html {
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden;
-  background: rgba($background, 50%);}
-  @media (max-width: 960px) {
-    body, html {
-      font-size: 15px; } }
+  background: linear-gradient( 135deg , rgba(26, 42, 48, 0.40) 0%, rgba(26, 42, 48, 0.70) 100%);
+  // &:before {
+  //   content: '';
+  //   width: 100%;
+  //   height: 100%;
+  //   position:absolute;
+  //   top: 0; left: 0;
+  //   background: linear-gradient( 135deg , rgba(26, 42, 48, 0.40) 0%, rgba(26, 42, 48, 0.60) 33%, rgba(26, 42, 48, 0.70) 66%, rgba(26, 42, 48, 0.70) 100%);
+  //   background-size: 200% 200%;
+	//   animation: gradient 40s ease infinite;
+  // }
+}
+@media (max-width: 960px) {
+  body, html {
+    font-size: 15px; } }
 
 ::-webkit-scrollbar {
   width: 0.5rem; }
@@ -45,6 +56,23 @@ body, html {
   background: rgba(127, 137, 146, 0); }
 
 // ANIMATIONS
+
+@keyframes hue {
+  to {
+    filter: hue-rotate(1turn);
+  }
+}
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
 
 @keyframes move {
   0%,

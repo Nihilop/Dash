@@ -6,12 +6,12 @@ import fnGetSteamApps from '@/lib/fnGetSteamApps'
 import fnGetSteamAppsID from '@/lib/fnGetSteamAppsID'
 import fnCreateBnetNode from '@/lib/fnCreateBnetNode'
 import ld from 'lodash'
-import exifr from 'exifr'
+//import exifr from 'exifr'
 
 const fs = require('fs')
 const path = require('path')
-const sharp = require('sharp')
-const mm = require('music-metadata')
+//const sharp = require('sharp')
+//const mm = require('music-metadata')
 
 class IpcRegister {
   constructor (ipcMain) {
@@ -55,37 +55,37 @@ class IpcRegister {
       event.returnValue = JSON.stringify(resObj)
     })
 
-    this.ipcMain.on('req_imageData', async (event, res) => {
-      const resObj = await this.getImage(res)
-      // console.log('ipcMain.on req_imageData : '+ resObj)
-      event.returnValue = JSON.stringify(resObj)
-    })
+    // this.ipcMain.on('req_imageData', async (event, res) => {
+    //   const resObj = await this.getImage(res)
+    //   // console.log('ipcMain.on req_imageData : '+ resObj)
+    //   event.returnValue = JSON.stringify(resObj)
+    // })
 
-    this.ipcMain.on('req_audioData', async (event, res) => {
-      // console.log('ipcMain.on req_audioData : ')
-      const resObj = await this.getAudioImage(res)
-      // console.log('ipcMain.on req_audioData res.channelName: ', res.channelName)
-      // console.log('ipcMain.on req_audioData resObj: ', resObj)
-      event.returnValue = JSON.stringify(resObj)
-    })
+    // this.ipcMain.on('req_audioData', async (event, res) => {
+    //   // console.log('ipcMain.on req_audioData : ')
+    //   const resObj = await this.getAudioImage(res)
+    //   // console.log('ipcMain.on req_audioData res.channelName: ', res.channelName)
+    //   // console.log('ipcMain.on req_audioData resObj: ', resObj)
+    //   event.returnValue = JSON.stringify(resObj)
+    // })
 
-    this.ipcMain.on('req_thumb_imageData', async (event, res) => {
-      // console.log('ipcMain.on req_thumb_imageData : ')
-      const resObj = await this.getImage(res)
-      resObj.type = 'image'
-      // console.log('ipcMain.on req_thumb_imageData res.channelName: ', res.channelName)
-      // console.log('ipcMain.on req_thumb_imageData resObj: ', resObj)
-      event.sender.send(res.channelName, JSON.stringify(resObj))
-    })
+    // this.ipcMain.on('req_thumb_imageData', async (event, res) => {
+    //   // console.log('ipcMain.on req_thumb_imageData : ')
+    //   const resObj = await this.getImage(res)
+    //   resObj.type = 'image'
+    //   // console.log('ipcMain.on req_thumb_imageData res.channelName: ', res.channelName)
+    //   // console.log('ipcMain.on req_thumb_imageData resObj: ', resObj)
+    //   event.sender.send(res.channelName, JSON.stringify(resObj))
+    // })
 
-    this.ipcMain.on('req_thumb_audioData', async (event, res) => {
-      console.log('ipcMain.on req_thumb_audioData : ')
-      const resObj = await this.getAudioImage(res)
-      resObj.type = 'audio'
-      // console.log('ipcMain.on req_thumb_audioData res.channelName: ', res.channelName)
-      // console.log('ipcMain.on req_thumb_audioData resObj: ', resObj)
-      event.sender.send(res.channelName, JSON.stringify(resObj))
-    })
+    // this.ipcMain.on('req_thumb_audioData', async (event, res) => {
+    //   console.log('ipcMain.on req_thumb_audioData : ')
+    //   const resObj = await this.getAudioImage(res)
+    //   resObj.type = 'audio'
+    //   // console.log('ipcMain.on req_thumb_audioData res.channelName: ', res.channelName)
+    //   // console.log('ipcMain.on req_thumb_audioData resObj: ', resObj)
+    //   event.sender.send(res.channelName, JSON.stringify(resObj))
+    // })
     this.ipcMain.on('req_bnet', async (event, res) => {
       const resObj = await this.getBnetGames(res)
       event.returnValue = resObj
@@ -102,36 +102,36 @@ class IpcRegister {
     })
   }
 
-  async getAudioImage (node) {
-    const { common } = await mm.parseFile(node.nodeKey)
-    const cover = mm.selectCover(common.picture)
+  // async getAudioImage (node) {
+  //   const { common } = await mm.parseFile(node.nodeKey)
+  //   const cover = mm.selectCover(common.picture)
 
-    const returnObj = { cover, metadata: common }
-    if (cover !== null && cover.data !== null) {
-      const sharpBuffer = await sharp(cover.data)
-        .resize({ width: 500 })
-        .png()
-        .toBuffer()
-      const base64 = sharpBuffer.toString('base64')
-      // console.log('base64 : ', base64)
-      returnObj.base64 = base64
-    }
+  //   const returnObj = { cover, metadata: common }
+  //   if (cover !== null && cover.data !== null) {
+  //     const sharpBuffer = await sharp(cover.data)
+  //       .resize({ width: 500 })
+  //       .png()
+  //       .toBuffer()
+  //     const base64 = sharpBuffer.toString('base64')
+  //     // console.log('base64 : ', base64)
+  //     returnObj.base64 = base64
+  //   }
 
-    return returnObj
-  }
+  //   return returnObj
+  // }
 
-  async getImage (node) {
-    const fileBuffer = fs.readFileSync(node.nodeKey)
-    const sharpBuffer = await sharp(fileBuffer)
-      .resize({ width: 500 })
-      .png()
-      .toBuffer()
-    const base64 = sharpBuffer.toString('base64')
-    const exifrInfo = await exifr.parse(fileBuffer)
-    const returnObj = { base64, exifrInfo }
-    console.log('getImage base64 : ', base64)
-    return returnObj
-  }
+  // async getImage (node) {
+  //   const fileBuffer = fs.readFileSync(node.nodeKey)
+  //   const sharpBuffer = await sharp(fileBuffer)
+  //     .resize({ width: 500 })
+  //     .png()
+  //     .toBuffer()
+  //   const base64 = sharpBuffer.toString('base64')
+  //   const exifrInfo = await exifr.parse(fileBuffer)
+  //   const returnObj = { base64, exifrInfo }
+  //   console.log('getImage base64 : ', base64)
+  //   return returnObj
+  // }
 
   getFolders (node) {
     const key = node.nodeKey + path.sep

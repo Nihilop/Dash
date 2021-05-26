@@ -218,17 +218,17 @@ $navOffset: 150px;
           vertical-align: middle;
           width: 100%;
           padding: 12px 15px;
-          margin: 0;
+          margin: 3px 0;
           color:white;
           box-sizing: border-box;
           &.item {
             cursor: pointer;
             border-radius: 5px;
             &:hover {
-              background: rgba(white, 5%);
+              background: rgba(white, 5%) !important;
             }
             &.active {
-              background: rgba(white, 10%);
+              background: rgba($principal, 10%);
             }
           }
           .title {
@@ -275,7 +275,7 @@ $navOffset: 150px;
     }
     &:hover {
       width: $sidebarOpen;
-      background: rgba(black, 10%);
+      background: rgba(black, 15%);
       transition: all .5s;
       li.clock {
         transition: all 0.3s;

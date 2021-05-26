@@ -7,8 +7,7 @@ module.exports = {
       ],
       builderOptions: {
         productName: 'GlobalLauncher'
-      },
-      outputDir: 'allBuild'
+      }
     },
     autoRouting: {
       chunkNamePrefix: 'page-'

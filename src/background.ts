@@ -1,16 +1,18 @@
 /* eslint @typescript-eslint/no-var-requires: "off" */
 'use strict'
-import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow } from 'electron'
+import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow, nativeImage } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import * as os from 'os'
 import IpcRegister from './api/IpcRegister'
+import path from 'path'
 const { setVibrancy } = require('electron-acrylic-window')
 const storage = require('electron-json-storage')
 const defaultDataPath = storage.getDefaultDataPath()
 storage.setDataPath(defaultDataPath + '/config')
+const unhandled = require('electron-unhandled');
 
-
+unhandled();
 // const express = require('express')
 // const path = require('path')
 // const PORT = 8200
@@ -25,6 +27,38 @@ storage.setDataPath(defaultDataPath + '/config')
 // server.listen(PORT)
 // console.log(`Listening on: http://localhost:${PORT}`)
 
+storage.get('preferences', function (error, settings) {
+  if (error) throw error
+  const InitOptions = {
+    parameters: {
+      trigger: "Ctrl+G",
+      nickname: "Noname",
+      autostart: false
+    }
+  }
+  if(settings === undefined) {
+    storage.set('preferences', InitOptions, function (error) {
+      if (error) throw error
+    })
+  }
+  let autoLaunchOptions = settings.parameters.autostart
+  console.log(autoLaunchOptions)
+
+  if(autoLaunchOptions) {
+    app.setLoginItemSettings({
+      name:"Launsh",
+      openAtLogin: true
+    })
+  } else {
+    app.setLoginItemSettings({
+      name:"Launsh",
+      openAtLogin: false
+    })
+  }
+})
+
+
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const isWindows10 = process.platform === 'win32' && os.release().split('.')[0] === '10'
 protocol.registerSchemesAsPrivileged([
@@ -34,7 +68,7 @@ protocol.registerSchemesAsPrivileged([
 let win: BrowserWindow
 let winSettings: BrowserWindow
 let tray
-const iconTray = './tray.png'
+const iconTray = nativeImage.createFromPath(path.join(__dirname, '/img/tray.png'))
 let vibrancyOp
 let shortcut
 
@@ -44,7 +78,7 @@ async function createWindow () {
 
   if (isWindows10) {
     vibrancyOp = {
-      theme: '#34495EAA',
+      theme: '#8034495E',
       effect: 'acrylic',
       useCustomWindowRefreshMethod: false,
       disableOnBlur: true,
@@ -76,7 +110,8 @@ async function createWindow () {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
-    if (!process.env.IS_TEST) win.webContents.openDevTools({ mode: 'detach' })
+    //if (!process.env.IS_TEST) win.webContents.openDevTools({ mode: 'detach' })
+    win.webContents.openDevTools({ mode: 'detach' })
   } else {
     createProtocol('app')
     // Load the index.html when not in development
@@ -144,14 +179,15 @@ function createWindowSettings () {
   winSettings.loadURL(settingsPath)
   ipcMain.on('closeSettings', () => {
     console.log('close clicked')
-    winSettings.hide()
+    app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) }) 
+    app.exit(0)
   })
 
   return winSettings
 }
 
 app.whenReady().then(() => {
-  tray = new Tray(iconTray)
+  tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
   const contextMenu = Menu.buildFromTemplate([
     { label: "Ouvrir l'application", click () { win.show() } },
     { label: 'Options', click () { winSettings.show() } },

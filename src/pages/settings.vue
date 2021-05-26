@@ -83,7 +83,6 @@ export default {
       startup: false,
       shortcut: '',
       shortcuts: ['Ctrl+G', 'Ctrl+H']
-
     }
   },
   mounted () {
@@ -99,12 +98,14 @@ export default {
       console.log(data)
       this.nickname = data.parameters.nickname
       this.shortcut = data.parameters.trigger
+      this.startup = data.parameters.autostart
     },
     save () {
       const data = {
         parameters: {
           trigger: this.shortcut,
-          nickname: this.nickname
+          nickname: this.nickname,
+          autostart: this.autostart
         }
       }
       storage.set('preferences', data, function (error) {
