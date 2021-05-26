@@ -5,16 +5,45 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "electron:build": "vue-cli-service electron:build",
+    "electron:serve": "vue-cli-service electron:serve",
+    "postinstall": "electron-builder install-app-deps",
+    "postuninstall": "electron-builder install-app-deps"
   },
+  "main": "background.js",
   "dependencies": {
+    "@mdi/font": "5.9.55",
+    "axios": "^0.21.1",
+    "body-scroll-lock": "^3.1.5",
+    "cheerio": "^1.0.0-rc.9",
     "core-js": "^3.6.5",
+    "electron-acrylic-window": "^0.5.5",
+    "electron-json-storage": "^4.5.0",
+    "exifr": "^6.3.0",
+    "express": "^4.17.1",
+    "find-steam-app": "^1.0.2",
+    "idb": "^6.0.0",
+    "jquery": "^3.6.0",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.1",
+    "music-metadata": "^7.8.5",
+    "path-directories": "^1.0.2",
+    "request": "^2.88.2",
+    "roboto-fontface": "*",
+    "sharp": "^0.26.2",
+    "v-contextmenu": "^3.0.0",
+    "v-hotkey": "^0.9.0",
+    "vdf-extra": "^2.2.2",
     "vue": "^3.0.0",
     "vue-class-component": "^8.0.0-0",
+    "vue-promised": "^2.0.3",
     "vue-router": "^4.0.0-0",
+    "vue-router-layout": "^0.3.0",
     "vuex": "^4.0.0-0"
   },
   "devDependencies": {
+    "@types/electron-devtools-installer": "^2.2.0",
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.18.0",
     "@vue/cli-plugin-babel": "~4.5.0",
@@ -26,15 +55,20 @@
     "@vue/compiler-sfc": "^3.0.0",
     "@vue/eslint-config-standard": "^5.1.2",
     "@vue/eslint-config-typescript": "^7.0.0",
+    "electron": "11.0.0",
+    "electron-devtools-installer": "^3.1.0",
     "eslint": "^6.7.2",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.0",
     "eslint-plugin-vue": "^7.0.0",
-    "sass": "^1.26.5",
-    "sass-loader": "^8.0.2",
-    "typescript": "~4.1.5"
+    "sass": "^1.32.0",
+    "sass-loader": "^10.0.0",
+    "typescript": "~4.1.5",
+    "vue-auto-routing": "^1.0.0",
+    "vue-cli-plugin-auto-routing": "^1.2.0",
+    "vue-cli-plugin-electron-builder": "^2.0.0-rc.6"
   },
   "eslintConfig": {
     "root": true,
@@ -42,14 +76,13 @@
       "node": true
     },
     "extends": [
-      "plugin:vue/vue3-essential",
+      "plugin:vue/recommended",
       "@vue/standard",
       "@vue/typescript/recommended"
     ],
     "parserOptions": {
-      "ecmaVersion": 2020
-    },
-    "rules": {}
+      "ecmaVersion": 2018
+    }
   },
   "browserslist": [
     "> 1%",
