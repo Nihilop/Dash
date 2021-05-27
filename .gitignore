@@ -1,7 +1,9 @@
 .DS_Store
 node_modules
 /dist
-/allBuild
+/ressources icons
+/licences
+
 
 
 # local env files
