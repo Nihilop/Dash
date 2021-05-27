@@ -5,14 +5,19 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import * as os from 'os'
 import IpcRegister from './api/IpcRegister'
+import fs from "fs"
 import path from 'path'
 const { setVibrancy } = require('electron-acrylic-window')
 const storage = require('electron-json-storage')
 const defaultDataPath = storage.getDefaultDataPath()
 storage.setDataPath(defaultDataPath + '/config')
+const dataPath = storage.getDataPath();
+console.log(dataPath);
 const unhandled = require('electron-unhandled');
+import DiscordRPC from 'discord-rpc'
+import { autoUpdater } from "electron-updater"
 
-unhandled();
+// unhandled();
 // const express = require('express')
 // const path = require('path')
 // const PORT = 8200
@@ -27,37 +32,6 @@ unhandled();
 // server.listen(PORT)
 // console.log(`Listening on: http://localhost:${PORT}`)
 
-storage.get('preferences', function (error, settings) {
-  if (error) throw error
-  const InitOptions = {
-    parameters: {
-      trigger: "Ctrl+G",
-      nickname: "Noname",
-      autostart: false
-    }
-  }
-  if(settings === undefined) {
-    storage.set('preferences', InitOptions, function (error) {
-      if (error) throw error
-    })
-  }
-  let autoLaunchOptions = settings.parameters.autostart
-  console.log(autoLaunchOptions)
-
-  if(autoLaunchOptions) {
-    app.setLoginItemSettings({
-      name:"Launsh",
-      openAtLogin: true
-    })
-  } else {
-    app.setLoginItemSettings({
-      name:"Launsh",
-      openAtLogin: false
-    })
-  }
-})
-
-
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const isWindows10 = process.platform === 'win32' && os.release().split('.')[0] === '10'
@@ -71,6 +45,7 @@ let tray
 const iconTray = nativeImage.createFromPath(path.join(__dirname, '/img/tray.png'))
 let vibrancyOp
 let shortcut
+let autostart
 
 async function createWindow () {
   // Create the browser window.
@@ -110,13 +85,13 @@ async function createWindow () {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
-    //if (!process.env.IS_TEST) win.webContents.openDevTools({ mode: 'detach' })
-    win.webContents.openDevTools({ mode: 'detach' })
+    if (!process.env.IS_TEST) win.webContents.openDevTools({ mode: 'detach' })
   } else {
     createProtocol('app')
     // Load the index.html when not in development
 
     win.loadURL('app://./index.html')
+    autoUpdater.checkForUpdatesAndNotify()
   }
 
   const ipcRegister = new IpcRegister(ipcMain)
@@ -138,23 +113,43 @@ async function createWindow () {
   ipcMain.on('openSettings', () => {
     winSettings.show()
   })
+  initParams()
   createShortcut()
   createWindowSettings()
 
   return win
 }
 
+async function initParams() {
+  const InitOptions = { parameters: { trigger: "Ctrl+G", nickname: "Non renseigner", autostart: true }}
+  const jsonString = JSON.stringify(InitOptions)
+  await fs.writeFile(dataPath + '\\preferences.json', jsonString,{ flag: 'wx' }, (err) => {
+      if (err) {
+        //console.log('Le fichier preferences existe déjà')
+        return 
+      };
+      console.log("ok!");
+  });
+}
+
 function createShortcut () {
   storage.get('preferences', function (error, settings) {
     if (error) throw error
     shortcut = settings.parameters.trigger
+    autostart = settings.parameters.autostart
+    app.setLoginItemSettings({
+      name:"Dash",
+      openAtLogin: autostart
+    })
     globalShortcut.register(shortcut, () => {
       if (win.isVisible()) {
         win.hide()
         console.log('pressed and hide')
       } else {
+        setActivity();
         win.show()
-        win.setAlwaysOnTop(true, 'floating')
+        win.focus()
+        //win.setAlwaysOnTop(true, 'floating')
         console.log('pressed and open')
       }
     })
@@ -186,15 +181,29 @@ function createWindowSettings () {
   return winSettings
 }
 
-app.whenReady().then(() => {
-  tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
-  const contextMenu = Menu.buildFromTemplate([
-    { label: "Ouvrir l'application", click () { win.show() } },
-    { label: 'Options', click () { winSettings.show() } },
-    { label: 'Quitter', click () { app.quit() } }
-  ])
-  tray.setContextMenu(contextMenu)
-}).then(createWindow)
+
+
+const singleInstance = app.requestSingleInstanceLock()
+
+if (!singleInstance) {
+  app.quit()
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    win.show()
+    win.focus()
+  })
+
+  // Create windows, load the rest of the app, etc...
+  app.whenReady().then(() => {
+    tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
+    const contextMenu = Menu.buildFromTemplate([
+      { label: "Ouvrir l'application", click () { win.show() } },
+      { label: 'Options', click () { winSettings.show() } },
+      { label: 'Quitter', click () { app.quit() } }
+    ])
+    tray.setContextMenu(contextMenu)
+  }).then(createWindow)
+}
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -239,3 +248,52 @@ if (isDevelopment) {
     })
   }
 }
+
+// Set this to your Client ID.
+const clientId = '847459425585201182';
+
+function updateStatusMessage() {
+  if(win.isVisible()) {
+    const data = { play : "inopen", message : "Ah, il veut jouer ?"}
+    return data
+  } else {
+    const data = { play : "notPlaying", message : "Dans aucun jeu. lol"}
+    return data
+  }
+}
+
+// Only needed if you want to use spectate, join, or ask to join
+
+
+DiscordRPC.register(clientId);
+const rpc = new DiscordRPC.Client({ transport: 'ipc' });
+
+//const startTimestamp = new Date();
+
+
+async function setActivity() {
+  if (!rpc || !win) {
+    return;
+  }
+  const StatusLol = await updateStatusMessage()
+  
+  rpc.setActivity({
+    state: StatusLol.message,
+    //startTimestamp,
+    largeImageKey: 'dashou',
+    largeImageText: 'Dash - Launcher',
+    smallImageKey: StatusLol.play,
+    instance: false,
+  });
+}
+
+rpc.on('ready', () => {
+  setActivity();
+
+  // activity can only be set every 15 seconds
+  setInterval(() => {
+    setActivity();
+  }, 2000);
+});
+
+rpc.login({ clientId }).catch(console.error);

@@ -1,4 +1,4 @@
-# deskconcept
+# Dash
 
 ## Project setup
 ```

@@ -6,7 +6,21 @@ module.exports = {
         'github'
       ],
       builderOptions: {
-        productName: 'GlobalLauncher'
+        productName: 'Dash',
+        win: {
+          icon: "./build/icons/icon.ico",
+          publisherName: "Nihilo"
+        },
+        nsis: {
+          oneClick: false,
+          perMachine: false,
+          license: "./licenses/license_fr.txt",
+          createDesktopShortcut: "always",
+          createStartMenuShortcut: true,
+          deleteAppDataOnUninstall: true,
+          runAfterFinish: true,
+          allowToChangeInstallationDirectory: true
+        }
       }
     },
     autoRouting: {

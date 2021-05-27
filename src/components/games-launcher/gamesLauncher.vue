@@ -277,7 +277,7 @@ import path from 'path'
 const scraper = require('@/lib/steamScraper')
 const fs = require('fs')
 const electron = window.require ? window.require('electron') : null
-const { shell } = require('electron')
+const { shell, Notification  } = require('electron')
 
 /* eslint-disable no-alert, no-console */
 function getValues (obj, key) {
@@ -409,7 +409,6 @@ export default {
       const resultPath_ = []
       let acfFiles = []
       let results
-      let loading = null
       let resObj = null
       const appIds_ = []
       let timer
@@ -448,7 +447,6 @@ export default {
       // Parcours les ID et les maps en item utilisable
       appIds_.forEach(res => {
         results = []
-        loading = true
         scraper.getData(res.AppState.appid, function (err, data) {
           if (err) console.log(err)
           const result = { app: res, meta: data }
@@ -485,10 +483,14 @@ export default {
           this.addScanToFav(results)
         }, 2000)
       }
+
+      
     },
     async addScanToFav (value) {
       const allKeys = await this.indexDbGame.getAllKeys(this.dbGmName)
+      let loading = null
       await value.forEach(fav => {
+        loading = true
         if (allKeys.includes(fav.data.stat.ino)) {
           console.log(fav.data.stat.ino + ': déjà présent.')
         } else {
@@ -497,12 +499,20 @@ export default {
         }
         setTimeout(() => {
           this.loadMessage = 'Ajouts terminés'
+          loading = false
           setTimeout(() => {
             this.steamModal = false
             this.gamesLoaded = true
           }, 1000)
         }, 1000)
       })
+      if(!loading) {
+        const notification = {
+          title: 'Metadonnées',
+          body: 'Les jeux trouvés ont été ajouter. Actualiser de nouveau si besoin.'
+        }
+        new Notification(notification).show()
+      }
     },
     // AddToDB
     async addToLauncher (item) {
