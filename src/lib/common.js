@@ -1,4 +1,3 @@
-/* eslint @typescript-eslint/no-var-requires: "off" */
 import ConstIconType from '@/lib/ConstIconType.js'
 import moment from 'moment'
 import { shell } from 'electron'

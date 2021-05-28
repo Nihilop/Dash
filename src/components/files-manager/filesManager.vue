@@ -78,13 +78,10 @@
 </template>
 
 <script>
-/* eslint @typescript-eslint/no-var-requires: "off" */
-import { defineAsyncComponent } from 'vue'
-// import Grid from '@/components/Layouts/Grid'
+import Grid from '@/components/files-manager/Layouts/Grid.vue'
 import List from '@/components/files-manager/Layouts/List.vue'
 import Sidebar from '@/components/files-manager/Layouts/Sidebar.vue'
 import Modal from '@/widgets/Dialog.widget.vue'
-const Grid = defineAsyncComponent({ loader: () => import('@/components/files-manager/Layouts/Grid.vue'), delay: 3000, timeout: 5000 })
 const electron = window.require ? window.require('electron') : null
 const { shell } = require('electron')
 const homeDir = require('os').homedir()
@@ -117,10 +114,7 @@ export default {
     }
   },
   async created () {
-    setTimeout(() => {
-      this.initFolder()
-    }, 200)
-
+    this.initFolder()
     // console.log('this.$store.state.favKeys : ', this.$store.state.favKeys)
   },
   mounted () {
@@ -151,19 +145,19 @@ export default {
       console.log('onUpdateActiveFolder item : ', localStorage.rootdir)
       this.$store.dispatch('SELECTED_FOLDER', localStorage.rootdir)
       this.$store.dispatch('CURRENT_FOLDER', localStorage.rootdir)
-      const res = electron.ipcRenderer.sendSync('req_folderContents', this.$store.state.selectedFolder)
-      const resParse = JSON.parse(res)
-      const newContents = resParse.contents
-      // const folders = resParse.folders
-      // this.$store.dispatch('FOLDER_CHILD', { item: this.$store.state.selectedFolder, folders })
-      this.$store.dispatch('FOLDER_CONTENTS', newContents)
+      setTimeout(() => {
+        const res = electron.ipcRenderer.sendSync('req_folderContents', this.$store.state.selectedFolder)
+        const resParse = JSON.parse(res)
+        const newContents = resParse.contents
+        this.$store.dispatch('FOLDER_CONTENTS', newContents)
+        if (newContents === 0) {
+          this.errorMessage = "Nous ne parvernons pas à trouver vos données, il semblerait que votre racine soit vide ou n'existe pas."
+          this.newUserModal = true
+        }
+      }, 200)
+     
 
-      // await this.$store.dispatch('FOLDERS', folders)
-
-      if (newContents === 0) {
-        this.errorMessage = "Nous ne parvernons pas à trouver vos données, il semblerait que votre racine soit vide ou n'existe pas."
-        this.newUserModal = true
-      }
+      
     },
     openDocument (value) {
       const Dir = `${homeDir}/${value}`

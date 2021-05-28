@@ -1,4 +1,4 @@
-/* eslint @typescript-eslint/no-var-requires: "off" */
+
 import fnCreateSteamNode from './fnCreateSteamNode'
 const { findSteamAppById } = require('find-steam-app')
 const fs = require('fs')

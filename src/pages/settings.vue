@@ -72,7 +72,7 @@
 </template>
 
 <script>
-/* eslint @typescript-eslint/no-var-requires: "off" */
+
 const electron = window.require ? window.require('electron') : null
 const storage = require('electron-json-storage')
 export default {
@@ -102,6 +102,7 @@ export default {
     },
     save () {
       const data = { parameters: { trigger: this.shortcut, nickname: this.nickname, autostart: this.autostart }} 
+      console.log(data)
       storage.set('preferences', data, function (error) {
         if (error) throw error
         electron.ipcRenderer.send('reloadMainWindow')

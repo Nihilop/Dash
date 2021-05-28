@@ -1,4 +1,3 @@
-/* eslint @typescript-eslint/no-var-requires: "off" */
 import fnCreateNode from './fnCreateNode'
 
 const { execSync } = require('child_process')

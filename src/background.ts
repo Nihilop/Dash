@@ -1,4 +1,3 @@
-/* eslint @typescript-eslint/no-var-requires: "off" */
 'use strict'
 import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow, nativeImage } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
@@ -31,7 +30,7 @@ let tray
 const iconTray = nativeImage.createFromPath(path.join(__dirname, '/img/tray.png'))
 let vibrancyOp
 
-initParams()
+
 
 async function createWindow () {
   // Create the browser window.
@@ -80,8 +79,7 @@ async function createWindow () {
     autoUpdater.checkForUpdatesAndNotify()
   }
 
-  const ipcRegister = new IpcRegister(ipcMain)
-  ipcRegister.registerOn()
+  
 
   win.on('blur', () => {
     win.hide()
@@ -99,8 +97,6 @@ async function createWindow () {
   ipcMain.on('openSettings', () => {
     winSettings.show()
   })
-  
-  
 
   return win
 }
@@ -132,44 +128,69 @@ function createWindowSettings () {
   return winSettings
 }
 
+initParams()
+
 function initParams() {
   const InitOptions = { parameters: { trigger: "Ctrl+G", nickname: "Non renseigner", autostart: true }}
   const jsonString = JSON.stringify(InitOptions)
-  fs.writeFile(dataPath + '\\preferences.json', jsonString,{ flag: 'wx' }, (err) => {
+  const dbPath = dataPath + '\\preferences.json'
+
+  if(fs.existsSync(dataPath)) {
+    fs.writeFile(dbPath, jsonString, { flag: 'wx' }, (err) => {
       if (err) {
         console.log('Le fichier preferences existe déjà')
         return 
       };
-      console.log("ok!");
-  });  
-}
+    }); 
+  } else {
+    const defaultDataPath = storage.getDefaultDataPath()
+    storage.setDataPath(defaultDataPath + '/config')
+    setTimeout(() => {
+      initParams()
+    }, 1000)    
+  }
 
+  return 
+}
 function setAutoStart() {
-  storage.get('preferences', function (error, settings) {
-    if (error) throw error
-    let autostart = settings.parameters.autostart
-    app.setLoginItemSettings({
-      name:"Dash",
-      openAtLogin: autostart
+  if(fs.existsSync(dataPath + '\\preferences.json')) {
+    storage.get('preferences', function (error, settings) {
+      if (error) {
+        console.log(error)
+      }
+      let autostart = settings.parameters.autostart
+      app.setLoginItemSettings({
+        name:"Dash - Launcher",
+        openAtLogin: autostart
+      })
     })
-  })
+  } else {
+    setTimeout(() => {
+      setAutoStart()
+    }, 2000)   
+  }
 }
 function createShortcut () {
-  storage.get('preferences', function (error, settings) {
-    if (error) throw error
-    let shortcut = settings.parameters.trigger
-    globalShortcut.register(shortcut, () => {
-      if (win.isVisible()) {
-        win.hide()
-        console.log('pressed and hide')
-      } else {
-        win.show()
-        win.focus()
-        console.log('pressed and open')
-      }
+  if(fs.existsSync(dataPath + '\\preferences.json')) {
+    storage.get('preferences', function (error, settings) {
+      if (error) throw error
+      let shortcut = settings.parameters.trigger
+      globalShortcut.register(shortcut, () => {
+        if (win.isVisible()) {
+          win.hide()
+          console.log('pressed and hide')
+        } else {
+          win.show()
+          win.focus()
+          console.log('pressed and open')
+        }
+      })
     })
-    console.log(shortcut)
-  })
+  }else {
+    setTimeout(() => {
+      createShortcut()
+    }, 2000)   
+  }
 }
 
 if (!singleInstance) {
@@ -182,6 +203,8 @@ if (!singleInstance) {
 
   // Create windows, load the rest of the app, etc...
   app.whenReady().then(() => {
+    const ipcRegister = new IpcRegister(ipcMain)
+    ipcRegister.registerOn()
     createWindowSettings()
     setAutoStart()
     createShortcut()
@@ -191,10 +214,12 @@ if (!singleInstance) {
       { label: 'Options', click () { winSettings.show() } },
       { label: 'Quitter', click () { app.quit() } }
     ])
+    tray.on('double-click', function() {
+      win.show()
+    })
     tray.setContextMenu(contextMenu)
   }).then(createWindow)
 }
-
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {

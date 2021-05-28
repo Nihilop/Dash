@@ -12,14 +12,7 @@ module.exports = {
           publisherName: "Nihilo"
         },
         nsis: {
-          oneClick: false,
-          perMachine: false,
-          license: "./licenses/license_fr.txt",
-          createDesktopShortcut: "always",
-          createStartMenuShortcut: true,
-          deleteAppDataOnUninstall: true,
-          runAfterFinish: true,
-          allowToChangeInstallationDirectory: true
+          oneClick: true
         }
       }
     },

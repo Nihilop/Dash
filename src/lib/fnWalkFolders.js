@@ -1,4 +1,4 @@
-/* eslint @typescript-eslint/no-var-requires: "off" */
+
 const path = require('path')
 const fs = require('fs')
 /**

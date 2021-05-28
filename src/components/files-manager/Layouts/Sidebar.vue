@@ -7,7 +7,6 @@
   </aside>
 </template>
 <script>
-/* eslint @typescript-eslint/no-var-requires: "off" */
 import Fav from '@/components/files-manager/OptionsList'
 import { defineComponent, onMounted, ref } from 'vue'
 const electron = window.require ? window.require('electron') : null

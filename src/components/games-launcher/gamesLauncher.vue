@@ -265,7 +265,6 @@
 </template>
 
 <script>
-/* eslint @typescript-eslint/no-var-requires: "off" */
 // Imports global
 import { openDB } from 'idb'
 import modal from '@/widgets/Dialog.widget'
@@ -351,9 +350,7 @@ export default {
   },
   async created () {
     this.getBnetPath()
-    setTimeout(() => {
-      this.initialize()
-    }, 500)
+    this.initialize()
   },
   methods: {
     setCat (item) {
@@ -368,13 +365,6 @@ export default {
       this.indexDbGame = await this.initIndexDbGame()
       console.log('initialize indexDb : ', this.indexDbGame)
       this.setGameList()
-      setTimeout(() => {
-        if (this.$store.state.gameList <= 0) {
-          this.refreshGames ()
-        } else {
-          this.gamesLoaded = true
-        }
-      }, 500)
     },
     async initIndexDbGame () {
       return await openDB(this.dbName2, 2, {
@@ -384,9 +374,9 @@ export default {
       })
     },
     refreshGames () {
+      this.steamModal = true
       setTimeout(() => {
-        this.steamModal = true
-        //this.WalkSteamDir()
+        this.WalkSteamDir()
         this.WalkBnetDir()
       }, 500)
     },
@@ -402,7 +392,7 @@ export default {
     async WalkBnetDir () { 
       let timer
       if(this.bnetPath.length >= 0) {
-        // Progress bar 1/2
+        //Progress bar 1/2
         timer = setInterval(() => {
           this.SteamLoading += 0.01
           if (this.SteamLoading === 0.5) {
@@ -410,14 +400,14 @@ export default {
             clearInterval(timer)
           }
         }, 10)
-        const config = await fs.readFileSync(this.bnetPath, 'utf8')
+        const config = await fs.readFileSync(this.bnetPath)
         const parsed = JSON.parse(config)
         const clientRoot = parsed.Client.Install.DefaultInstallPath.toString()
-        const Launcherpath = getValues(parsed, 'Path')
+        const Launcherpath = await getValues(parsed, 'Path')
         localStorage.bnetRoot = Launcherpath[0] + '\\Battle.net.exe'
 
-        const bnetGamesfolders = await electron.ipcRenderer.sendSync('req_bnet', clientRoot)
-        var bnetContents = bnetGamesfolders.contents
+        const bnetGamesfolders = electron.ipcRenderer.sendSync('req_bnet', clientRoot)
+        const bnetContents = bnetGamesfolders.contents
         console.log(bnetContents)
 
         if(bnetContents.length > 0) {
@@ -566,6 +556,7 @@ export default {
       const allKeys = await this.indexDbGame.getAllKeys(this.dbGmName)
       this.$store.dispatch('GAME_LIST', allItems)
       this.$store.dispatch('GAME_KEYS', allKeys)
+      this.gamesLoaded = true
     },
     // Return un ACF file parsé
     isNumeric (n) {

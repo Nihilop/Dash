@@ -1,4 +1,4 @@
-/* eslint @typescript-eslint/no-var-requires: "off" */
+
 const cheerio = require('cheerio')
 const request = require('request')
 var $ = require('jquery')
