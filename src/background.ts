@@ -12,25 +12,10 @@ const storage = require('electron-json-storage')
 const defaultDataPath = storage.getDefaultDataPath()
 storage.setDataPath(defaultDataPath + '/config')
 const dataPath = storage.getDataPath();
-console.log(dataPath);
-const unhandled = require('electron-unhandled');
+//const unhandled = require('electron-unhandled');
 import DiscordRPC from 'discord-rpc'
 import { autoUpdater } from "electron-updater"
-
 // unhandled();
-// const express = require('express')
-// const path = require('path')
-// const PORT = 8200
-// const server = express()
-// server.use(express.static(path.resolve(__dirname, '../extensions/'), {
-//   maxAge: '365d'
-// }))
-
-// var host = process.env.HOST || '0.0.0.0'
-// var port = process.env.PORT || 8081
-
-// server.listen(PORT)
-// console.log(`Listening on: http://localhost:${PORT}`)
 
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -39,13 +24,14 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
 
+const singleInstance = app.requestSingleInstanceLock()
 let win: BrowserWindow
 let winSettings: BrowserWindow
 let tray
 const iconTray = nativeImage.createFromPath(path.join(__dirname, '/img/tray.png'))
 let vibrancyOp
-let shortcut
-let autostart
+
+initParams()
 
 async function createWindow () {
   // Create the browser window.
@@ -113,52 +99,15 @@ async function createWindow () {
   ipcMain.on('openSettings', () => {
     winSettings.show()
   })
-  initParams()
-  createShortcut()
-  createWindowSettings()
+  
+  
 
   return win
 }
 
-async function initParams() {
-  const InitOptions = { parameters: { trigger: "Ctrl+G", nickname: "Non renseigner", autostart: true }}
-  const jsonString = JSON.stringify(InitOptions)
-  await fs.writeFile(dataPath + '\\preferences.json', jsonString,{ flag: 'wx' }, (err) => {
-      if (err) {
-        //console.log('Le fichier preferences existe déjà')
-        return 
-      };
-      console.log("ok!");
-  });
-}
-
-function createShortcut () {
-  storage.get('preferences', function (error, settings) {
-    if (error) throw error
-    shortcut = settings.parameters.trigger
-    autostart = settings.parameters.autostart
-    app.setLoginItemSettings({
-      name:"Dash",
-      openAtLogin: autostart
-    })
-    globalShortcut.register(shortcut, () => {
-      if (win.isVisible()) {
-        win.hide()
-        console.log('pressed and hide')
-      } else {
-        setActivity();
-        win.show()
-        win.focus()
-        //win.setAlwaysOnTop(true, 'floating')
-        console.log('pressed and open')
-      }
-    })
-    console.log(shortcut)
-  })
-}
-
 function createWindowSettings () {
   const settingsPath = process.env.NODE_ENV === 'development' ? 'http://localhost:8080/#settings' : `file://${__dirname}/index.html#settings`
+
   winSettings = new BrowserWindow({
     width: 1000,
     height: 700,
@@ -171,7 +120,9 @@ function createWindowSettings () {
       enableRemoteModule: true
     }
   })
+
   winSettings.loadURL(settingsPath)
+
   ipcMain.on('closeSettings', () => {
     console.log('close clicked')
     app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) }) 
@@ -181,9 +132,45 @@ function createWindowSettings () {
   return winSettings
 }
 
+function initParams() {
+  const InitOptions = { parameters: { trigger: "Ctrl+G", nickname: "Non renseigner", autostart: true }}
+  const jsonString = JSON.stringify(InitOptions)
+  fs.writeFile(dataPath + '\\preferences.json', jsonString,{ flag: 'wx' }, (err) => {
+      if (err) {
+        console.log('Le fichier preferences existe déjà')
+        return 
+      };
+      console.log("ok!");
+  });  
+}
 
-
-const singleInstance = app.requestSingleInstanceLock()
+function setAutoStart() {
+  storage.get('preferences', function (error, settings) {
+    if (error) throw error
+    let autostart = settings.parameters.autostart
+    app.setLoginItemSettings({
+      name:"Dash",
+      openAtLogin: autostart
+    })
+  })
+}
+function createShortcut () {
+  storage.get('preferences', function (error, settings) {
+    if (error) throw error
+    let shortcut = settings.parameters.trigger
+    globalShortcut.register(shortcut, () => {
+      if (win.isVisible()) {
+        win.hide()
+        console.log('pressed and hide')
+      } else {
+        win.show()
+        win.focus()
+        console.log('pressed and open')
+      }
+    })
+    console.log(shortcut)
+  })
+}
 
 if (!singleInstance) {
   app.quit()
@@ -195,6 +182,9 @@ if (!singleInstance) {
 
   // Create windows, load the rest of the app, etc...
   app.whenReady().then(() => {
+    createWindowSettings()
+    setAutoStart()
+    createShortcut()
     tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
     const contextMenu = Menu.buildFromTemplate([
       { label: "Ouvrir l'application", click () { win.show() } },
@@ -204,6 +194,7 @@ if (!singleInstance) {
     tray.setContextMenu(contextMenu)
   }).then(createWindow)
 }
+
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -262,24 +253,16 @@ function updateStatusMessage() {
   }
 }
 
-// Only needed if you want to use spectate, join, or ask to join
-
-
 DiscordRPC.register(clientId);
 const rpc = new DiscordRPC.Client({ transport: 'ipc' });
-
-//const startTimestamp = new Date();
-
 
 async function setActivity() {
   if (!rpc || !win) {
     return;
   }
   const StatusLol = await updateStatusMessage()
-  
   rpc.setActivity({
     state: StatusLol.message,
-    //startTimestamp,
     largeImageKey: 'dashou',
     largeImageText: 'Dash - Launcher',
     smallImageKey: StatusLol.play,

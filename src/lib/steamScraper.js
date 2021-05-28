@@ -113,6 +113,7 @@ function getData (appId, cb) {
         cb(null, obj)
       } catch (err) {
         cb(err, null)
+        return
       }
     }
   })

@@ -1,6 +1,6 @@
 {
   "name": "dash",
-  "version": "1.0.0b",
+  "version": "0.0.1b",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -19,14 +19,12 @@
     "cheerio": "^1.0.0-rc.9",
     "core-js": "^3.6.5",
     "discord-rpc": "^3.2.0",
-    "discord.js": "^12.5.3",
     "electron-acrylic-window": "^0.5.5",
     "electron-json-storage": "^4.5.0",
     "electron-unhandled": "^3.0.2",
     "electron-updater": "^4.3.9",
     "exifr": "^6.3.0",
     "express": "^4.17.1",
-    "ffmpeg-static": "^4.3.0",
     "find-steam-app": "^1.0.2",
     "idb": "^6.0.0",
     "jquery": "^3.6.0",

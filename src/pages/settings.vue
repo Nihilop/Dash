@@ -94,27 +94,18 @@ export default {
       console.log(defaultDataPath)
       storage.setDataPath(defaultDataPath + '/config')
       console.log(defaultDataPath)
-      const data = storage.getSync('preferences') || {}
+      const data = storage.getSync('preferences')
       console.log(data)
       this.nickname = data.parameters.nickname
       this.shortcut = data.parameters.trigger
       this.startup = data.parameters.autostart
     },
     save () {
-      const data = {
-        parameters: {
-          trigger: this.shortcut,
-          nickname: this.nickname,
-          autostart: this.autostart
-        }
-      }
+      const data = { parameters: { trigger: this.shortcut, nickname: this.nickname, autostart: this.autostart }} 
       storage.set('preferences', data, function (error) {
         if (error) throw error
         electron.ipcRenderer.send('reloadMainWindow')
       })
-      // new electron.remote.Notification('Title', {
-      //   body: 'Notification from the Renderer process'
-      // })
       this.closeApp()
     },
     closeApp () {

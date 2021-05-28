@@ -308,6 +308,7 @@ export default {
       dbName2: 'games',
       dbGmName: 'games',
       datas: [],
+      loading: false,
       steamModal: false,
       gameDetails: false,
       manualAdd: false,
@@ -318,7 +319,12 @@ export default {
       apiKey: '882842ac059a4013ad679486b1e64eca',
       SearchGame: '',
       category: ['All', 'steam', 'bnet', 'local'],
-      SelectedCat: 'All'
+      SelectedCat: 'All',
+
+      steamPath: [],
+      bnetPath: [],
+      originPath: [],
+      epicPath: []
     }
   },
   computed: {
@@ -344,9 +350,10 @@ export default {
 
   },
   async created () {
+    this.getBnetPath()
     setTimeout(() => {
       this.initialize()
-    }, 200)
+    }, 500)
   },
   methods: {
     setCat (item) {
@@ -359,41 +366,15 @@ export default {
     async initialize () {
       this.initIndexDbGame()
       this.indexDbGame = await this.initIndexDbGame()
-      // console.log('initialize indexDb : ', this.indexDbGame)
+      console.log('initialize indexDb : ', this.indexDbGame)
       this.setGameList()
       setTimeout(() => {
         if (this.$store.state.gameList <= 0) {
-          this.WalkSteamDir()
-          this.WalkBnetDir()
+          this.refreshGames ()
         } else {
           this.gamesLoaded = true
         }
       }, 500)
-    },
-    refreshGames () {
-      setTimeout(() => {
-        this.WalkSteamDir()
-        this.WalkBnetDir()
-      }, 500)
-    },
-    // BattleNET Games
-    async WalkBnetDir () {
-      const process = require('process')
-      const battleNetModuleConfig = '%appdata%/Battle.net/Battle.net.config'
-      const configFilePath = path.resolve(battleNetModuleConfig.replace('%appdata%', process.env.APPDATA))
-      // console.log(`battleNet trouvé, informations ici : ${configFilePath}.`);
-      const config = await fs.readFileSync(configFilePath, 'utf8')
-      const parsed = JSON.parse(config)
-      const clientRoot = parsed.Client.Install.DefaultInstallPath.toString()
-      const Launcherpath = getValues(parsed, 'Path')
-      localStorage.bnetRoot = Launcherpath[0] + '\\Battle.net.exe'
-
-      const bnetGamesfolders = electron.ipcRenderer.sendSync('req_bnet', clientRoot)
-      var bnetContents = bnetGamesfolders.contents
-      // onsole.log(bnetContents)
-      bnetContents.forEach(elem => {
-        this.addToLauncher(elem)
-      })
     },
     async initIndexDbGame () {
       return await openDB(this.dbName2, 2, {
@@ -402,8 +383,61 @@ export default {
         }
       })
     },
+    refreshGames () {
+      setTimeout(() => {
+        this.steamModal = true
+        //this.WalkSteamDir()
+        this.WalkBnetDir()
+      }, 500)
+    },
+    // BattleNET Games
+    getBnetPath() {
+      const process = require('process')
+      const battleNetModuleConfig = '%appdata%/Battle.net/Battle.net.config'
+      const configFilePath = path.resolve(battleNetModuleConfig.replace('%appdata%', process.env.APPDATA))
+      this.loading = true
+      this.bnetPath = configFilePath
+      console.log(`battleNet trouvé, informations ici : ${this.bnetPath}. Nous allons envoyer la sauce !`);
+    },
+    async WalkBnetDir () { 
+      let timer
+      if(this.bnetPath.length >= 0) {
+        // Progress bar 1/2
+        timer = setInterval(() => {
+          this.SteamLoading += 0.01
+          if (this.SteamLoading === 0.5) {
+            this.loading = false
+            clearInterval(timer)
+          }
+        }, 10)
+        const config = await fs.readFileSync(this.bnetPath, 'utf8')
+        const parsed = JSON.parse(config)
+        const clientRoot = parsed.Client.Install.DefaultInstallPath.toString()
+        const Launcherpath = getValues(parsed, 'Path')
+        localStorage.bnetRoot = Launcherpath[0] + '\\Battle.net.exe'
+
+        const bnetGamesfolders = await electron.ipcRenderer.sendSync('req_bnet', clientRoot)
+        var bnetContents = bnetGamesfolders.contents
+        console.log(bnetContents)
+
+        if(bnetContents.length > 0) {
+          bnetContents.forEach(elem => {
+            this.addToLauncher(elem)
+          })
+        } 
+
+      } else {
+        this.steamModal = false
+        console.log("Il semblerait qu'une erreur innatendue soit arrivée !")
+      }
+    },
+
+
+    // -------------------------------------------
+    //   A REFAIRE PROPREMENT
+    // -------------------------------------------
     async WalkSteamDir () {
-      this.steamModal = true
+      
       let origins = []
       // Résultats
       const resultPath_ = []
@@ -423,14 +457,7 @@ export default {
         const newContents = resParse.contents
         resultPath_.push(newContents)
         this.loadMessage = 'Recherche des racines Steam'
-        setTimeout(() => {
-          timer = setInterval(() => {
-            this.SteamLoading += 0.01
-            if (this.SteamLoading === 0.3) {
-              clearInterval(timer)
-            }
-          }, 100)
-        }, 1000)
+        
 
         // check les perfs
         if (resultPath_.length >= 2) {
@@ -452,6 +479,7 @@ export default {
           const result = { app: res, meta: data }
           const response = electron.ipcRenderer.sendSync('req_steamID', result)
           resObj = JSON.parse(JSON.stringify(response))
+          console.log(resObj)
           results.push(resObj)
         })
 
@@ -475,52 +503,53 @@ export default {
         }, 500)
       })
 
-      if (results.length > 0) {
-        this.addScanToFav(results)
-      } else {
-        setTimeout(() => {
-          console.log(results)
-          this.addScanToFav(results)
-        }, 2000)
-      }
 
+      setTimeout(() => {
+        this.addScanToFav(results)
+      }, 1000)
       
     },
     async addScanToFav (value) {
       const allKeys = await this.indexDbGame.getAllKeys(this.dbGmName)
-      let loading = null
       await value.forEach(fav => {
-        loading = true
         if (allKeys.includes(fav.data.stat.ino)) {
           console.log(fav.data.stat.ino + ': déjà présent.')
         } else {
           this.addToLauncher(fav)
           console.log(fav + ': added')
         }
-        setTimeout(() => {
-          this.loadMessage = 'Ajouts terminés'
-          loading = false
-          setTimeout(() => {
-            this.steamModal = false
-            this.gamesLoaded = true
-          }, 1000)
-        }, 1000)
       })
-      if(!loading) {
-        const notification = {
-          title: 'Metadonnées',
-          body: 'Les jeux trouvés ont été ajouter. Actualiser de nouveau si besoin.'
-        }
-        new Notification(notification).show()
-      }
     },
+    // -------------------------------------------
+    //   A REFAIRE PROPREMENT
+    // -------------------------------------------
+
+
+
     // AddToDB
     async addToLauncher (item) {
       const allKeys = await this.indexDbGame.getAllKeys(this.dbGmName)
 
       if (allKeys.includes(item.data.stat.ino) === false) {
         await this.indexDbGame.add(this.dbGmName, JSON.parse(JSON.stringify(item)), item.data.stat.ino)
-        this.setGameList()
+        setTimeout(() => {
+          this.SteamLoading = 1
+          this.loadMessage = 'Ajouts terminés'
+          this.setGameList()
+          setTimeout(() => {
+            this.steamModal = false
+          }, 1000)
+        }, 1000)
+        
+      } else {
+        setTimeout(() => {
+          this.SteamLoading = 1
+          this.loadMessage = 'Aucun élément ajouter'
+          this.setGameList()
+          setTimeout(() => {
+            this.steamModal = false
+          }, 1000)
+        }, 1000)
       }
     },
     // RemoveToDB
@@ -575,13 +604,9 @@ export default {
       console.log("Ouverture de l'application")
     },
     async openBnetGame (id) {
-      // const { snapshot } = require("process-list");
-
-      // const tasks = await snapshot('pid', 'name');
-      // console.log(tasks);
-
       const { exec } = require('child_process')
       exec(`"${localStorage.bnetRoot}" --exec="launch ${id}"`)
+      electron.ipcRenderer.send('close', true)
       console.log(exec(`"${localStorage.bnetRoot}" --exec="launch ${id}"`))
     },
     launchApp (items) {
