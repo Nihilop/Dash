@@ -17,6 +17,8 @@ class IpcRegister {
   }
 
   registerOn () {
+    
+    
     this.ipcMain.on('req_system', async (event, res) => {
       // console.log('ipcMain.on req_system : ')
       const fileInfos = await fnGetDrives()

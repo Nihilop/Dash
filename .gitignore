@@ -1,8 +1,7 @@
 .DS_Store
 node_modules
 /dist
-ressourcesIcons
-licenses
+/docs/assets/ressourcesIcons
 
 
 

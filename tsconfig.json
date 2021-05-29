@@ -36,8 +36,7 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "tests/**/*.ts",
-    "tests/**/*.tsx"
-, "src/components/FooterBar/index.js", "src/components/FooterBar/index.js", "src/components/FooterBar/index.js", "src/components/Alert/index.ts"  ],
+    "tests/**/*.tsx"],
   "exclude": [
     "node_modules"
   ]

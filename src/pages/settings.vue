@@ -101,16 +101,16 @@ export default {
       this.startup = data.parameters.autostart
     },
     save () {
-      const data = { parameters: { trigger: this.shortcut, nickname: this.nickname, autostart: this.autostart }} 
+      const data = { parameters: { trigger: this.shortcut, nickname: this.nickname, autostart: this.startup }} 
       console.log(data)
       storage.set('preferences', data, function (error) {
         if (error) throw error
-        electron.ipcRenderer.send('reloadMainWindow')
+        electron.ipcRenderer.sendSync('reloadMainWindow')
       })
       this.closeApp()
     },
     closeApp () {
-      electron.ipcRenderer.send('closeSettings', true)
+      electron.ipcRenderer.sendSync('closeSettings', true)
     }
   }
 }

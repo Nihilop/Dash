@@ -104,7 +104,7 @@
               <button
                 v-if="game.origin === 'steam' || 'bnet'"
                 class="launchBtn"
-                @click="game.origin === &quot;bnet&quot; ? openBnetGame(game.appid) : openSteamGame(game.appid)"
+                @click="game.origin === &quot;bnet&quot; ? openBnetGame(game) : openSteamGame(game)"
               >
                 <i class="bi bi-play-fill" />
               </button>
@@ -171,7 +171,7 @@
               <p>{{ gameData.game.app_name }}</p>
               <button
                 class="shortLaunch"
-                @click="gameDetails.origin === &quot;bnet&quot; ? openBnetGame(gameData.appid) : openSteamGame(gameData.appid), (gameDetails = false)"
+                @click="gameDetails.origin === &quot;bnet&quot; ? openBnetGame(gameData) : openSteamGame(gameData), (gameDetails = false)"
               >
                 <i class="bi bi-play-fill" />
                 <span>Lancer !</span>
@@ -203,7 +203,7 @@
               <p>{{ gameData.label }}</p>
               <button
                 class="shortLaunch"
-                @click="gameDetails.origin === &quot;bnet&quot; ? openBnetGame(gameData.appid) : openSteamGame(gameData.appid), (gameDetails = false)"
+                @click="gameDetails.origin === &quot;bnet&quot; ? openBnetGame(gameData) : openSteamGame(gameData), (gameDetails = false)"
               >
                 <i class="bi bi-play-fill" />
                 <span>Lancer !</span>
@@ -224,7 +224,6 @@
       </template>
     </game-details>
     
-
     <modal
       v-model="manualAdd"
       :close-btn="false"
@@ -515,7 +514,6 @@ export default {
     // -------------------------------------------
 
 
-
     // AddToDB
     async addToLauncher (item) {
       const allKeys = await this.indexDbGame.getAllKeys(this.dbGmName)
@@ -590,15 +588,19 @@ export default {
     },
     // Open apps
     openSteamGame (id) {
-      shell.openExternal(`steam://run/${id}`)
-      electron.ipcRenderer.send('close', true)
-      console.log("Ouverture de l'application")
+      shell.openExternal(`steam://run/${id.appid}`)
+      electron.ipcRenderer.send('close')
+      const data = id.name
+      console.log(data)
+      electron.ipcRenderer.send('game_launch', data.toString())
+      console.log("Ouverture de l'application " + id.name)
     },
-    async openBnetGame (id) {
+    openBnetGame (id) {
       const { exec } = require('child_process')
-      exec(`"${localStorage.bnetRoot}" --exec="launch ${id}"`)
-      electron.ipcRenderer.send('close', true)
-      console.log(exec(`"${localStorage.bnetRoot}" --exec="launch ${id}"`))
+      exec(`"${localStorage.bnetRoot}" --exec="launch ${id.appid}"`)
+      electron.ipcRenderer.send('close')
+      electron.ipcRenderer.send('game_launch', id.name)
+      console.log(id.appid)
     },
     launchApp (items) {
       shell.openPath(items)

@@ -22,5 +22,6 @@ module.exports = {
   },
   lintOnSave: false,
   assetsDir: 'assets/',
-  runtimeCompiler: true
+  runtimeCompiler: true  
 }
+
