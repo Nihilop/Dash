@@ -43,7 +43,7 @@
     <a href="https://github.com/Nihilop/Dash"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/Nihilop/Dash">View Demo</a>
+    <a href="https://github.com/Nihilop/Dash/releases">Download</a>
     ·
     <a href="https://github.com/Nihilop/Dash/issues">Report Bug</a>
     ·
