@@ -31,7 +31,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/Nihilop/Desktop-launcher">
+  <a href="https://github.com/Nihilop/Dash">
     <img src="docs/assets/img/logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -40,14 +40,14 @@
   <p align="center">
     Simple launcher for windows 10+
     <br />
-    <a href="https://github.com/Nihilop/Desktop-launcher"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/Nihilop/Dash"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/Nihilop/Desktop-launcher">View Demo</a>
+    <a href="https://github.com/Nihilop/Dash">View Demo</a>
     ·
-    <a href="https://github.com/Nihilop/Desktop-launcher/issues">Report Bug</a>
+    <a href="https://github.com/Nihilop/Dash/issues">Report Bug</a>
     ·
-    <a href="https://github.com/Nihilop/Desktop-launcher/issues">Request Feature</a>
+    <a href="https://github.com/Nihilop/Dash/issues">Request Feature</a>
   </p>
 </p>
 
@@ -109,7 +109,7 @@ You will need Visual Studio or Visual C++ build tools to install this. An easy w
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/Nihilop/Desktop-launcher.git
+   git clone https://github.com/Nihilop/Dash.git
    ```
 2. Install NPM packages
    ```sh
@@ -145,7 +145,7 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 <!-- ROADMAP -->
 ## Roadmap
 
-See the [open issues](https://github.com/nihilop/Desktop-launcher/issues) for a list of proposed features (and known issues).
+See the [open issues](https://github.com/nihilop/Dash/issues) for a list of proposed features (and known issues).
 
 
 
@@ -174,7 +174,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 Nihilo - [Website](https://nihilo.fr)
 
-Project Link: [https://github.com/Nihilop/Desktop-launcher](https://github.com/Nihilop/Desktop-launcher)
+Project Link: [https://github.com/Nihilop/Dash](https://github.com/Nihilop/Dash)
 
 
 
@@ -191,16 +191,16 @@ Project Link: [https://github.com/Nihilop/Desktop-launcher](https://github.com/N
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/Nihilop/Desktop-launcher.svg?style=for-the-badge
-[contributors-url]: https://github.com/Nihilop/Desktop-launcher/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Nihilop/Desktop-launcher.svg?style=for-the-badge
-[forks-url]: https://github.com/Nihilop/Desktop-launcher/network/members
-[stars-shield]: https://img.shields.io/github/stars/Nihilop/Desktop-launcher.svg?style=for-the-badge
-[stars-url]: https://github.com/Nihilop/Desktop-launcher/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Nihilop/Desktop-launcher.svg?style=for-the-badge
-[issues-url]: https://github.com/Nihilop/Desktop-launcher/issues
-[license-shield]: https://img.shields.io/github/license/Nihilop/Desktop-launcher.svg?style=for-the-badge
-[license-url]: https://github.com/Nihilop/Desktop-launcher/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/Nihilop/Dash.svg?style=for-the-badge
+[contributors-url]: https://github.com/Nihilop/Dash/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/Nihilop/Dash.svg?style=for-the-badge
+[forks-url]: https://github.com/Nihilop/Dash/network/members
+[stars-shield]: https://img.shields.io/github/stars/Nihilop/Dash.svg?style=for-the-badge
+[stars-url]: https://github.com/Nihilop/Dash/stargazers
+[issues-shield]: https://img.shields.io/github/issues/Nihilop/Dash.svg?style=for-the-badge
+[issues-url]: https://github.com/Nihilop/Dash/issues
+[license-shield]: https://img.shields.io/github/license/Nihilop/Dash.svg?style=for-the-badge
+[license-url]: https://github.com/Nihilop/Dash/blob/master/LICENSE.txt
 
 
 
