@@ -297,7 +297,6 @@ if (isDevelopment) {
 // Set this to your Client ID.
 
 const clientId = '847459425585201182';
-const clientSecret = 'jYppDZbLoneUAfI4weHVZ5TDKL6wsdKs';
 const scopes = ['rpc'];
 let gameName_;
 let discordTimer;
