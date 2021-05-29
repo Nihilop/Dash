@@ -191,18 +191,16 @@ Project Link: [https://github.com/Nihilop/Desktop-launcher](https://github.com/N
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/Nihilop/repo.svg?style=for-the-badge
-[contributors-url]: https://github.com/Nihilop/repo/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Nihilop/repo.svg?style=for-the-badge
-[forks-url]: https://github.com/Nihilop/repo/network/members
-[stars-shield]: https://img.shields.io/github/stars/Nihilop/repo.svg?style=for-the-badge
-[stars-url]: https://github.com/Nihilop/repo/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Nihilop/repo.svg?style=for-the-badge
-[issues-url]: https://github.com/Nihilop/repo/issues
-[license-shield]: https://img.shields.io/github/license/Nihilop/repo.svg?style=for-the-badge
-[license-url]: https://github.com/Nihilop/repo/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/Nihilop 
+[contributors-shield]: https://img.shields.io/github/contributors/Nihilop/Desktop-launcher.svg?style=for-the-badge
+[contributors-url]: https://github.com/Nihilop/Desktop-launcher/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/Nihilop/Desktop-launcher.svg?style=for-the-badge
+[forks-url]: https://github.com/Nihilop/Desktop-launcher/network/members
+[stars-shield]: https://img.shields.io/github/stars/Nihilop/Desktop-launcher.svg?style=for-the-badge
+[stars-url]: https://github.com/Nihilop/Desktop-launcher/stargazers
+[issues-shield]: https://img.shields.io/github/issues/Nihilop/Desktop-launcher.svg?style=for-the-badge
+[issues-url]: https://github.com/Nihilop/Desktop-launcher/issues
+[license-shield]: https://img.shields.io/github/license/Nihilop/Desktop-launcher.svg?style=for-the-badge
+[license-url]: https://github.com/Nihilop/Desktop-launcher/blob/master/LICENSE.txt
 
 
 
