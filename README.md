@@ -40,7 +40,7 @@
   <p align="center">
     Simple launcher for windows 10+
     <br />
-    <a href="https://github.com/Nihilop/Dash"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/Nihilop/Dash/wiki"><strong>Explore the Wiki »</strong></a>
     <br />
     <br />
     <a href="https://github.com/Nihilop/Dash/releases">Download</a>
