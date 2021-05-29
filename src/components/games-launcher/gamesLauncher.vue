@@ -29,10 +29,11 @@
             <li
               v-for="cat in category"
               :key="cat.id"
-              :class="SelectedCat === cat ? 'active' : null"
-              @click="setCat(cat)"
+              :class="SelectedCat === cat.tag ? 'active' : null"
+              @click="setCat(cat.tag)"
             >
-              {{ cat }}
+              <img v-if="cat.icon" :src="cat.icon" />
+              <p v-else>{{ cat.name }}</p>
             </li>
           </ul>
         </div>
@@ -50,28 +51,31 @@
             :key="index"
             v-contextmenu:[game.name]
             class="card"
+            
           >
-            <div class="image">
+            <div class="image" >
               <!-- <img v-if="image['#text'] !== ''" :src="image['#text']" :alt="album.name" v-on:load="isLoaded()" v-bind:class="{ active: isActive }"> -->
               <img
                 v-if="game.game"
                 :src="game.game.cover"
                 :alt="game.name"
                 :class="{ active: isActive }"
-                @click.prevent="game.origin === 'steam' || 'bnet' ? openDetail(game) : launchApp (game.nodeKey)"
                 @load="isLoaded()"
+                @click="game.origin === 'bnet' ? openBnetGame(game) : openSteamGame(game)"
               >
               <img
                 v-else
                 src="/img/bg2.jpg"
                 :alt="game.name"
                 :class="{ active: isActive }"
-                @click.prevent="game.origin === 'steam' || 'bnet' ? openDetail(game) : launchApp (game.nodeKey)"
                 @load="isLoaded()"
+                @click="launchApp(game.nodeKey)"
               >
+              <i v-if="game.origin === 'steam' || game.origin === 'bnet'" @click.prevent="game.origin === 'steam' || 'bnet' ? openDetail(game) : null" class="detailsBtn bi bi-info" />
               <div
                 v-if="game.origin === 'local'"
                 class="iconApp"
+                
               >
                 <Promised
                   v-if="game.data.mimeType == 'application/x-ms-shortcut'"
@@ -100,24 +104,17 @@
                   </template>
                 </Promised>
               </div>
-
-              <button
-                v-if="game.origin === 'steam' || 'bnet'"
-                class="launchBtn"
-                @click="game.origin === &quot;bnet&quot; ? openBnetGame(game) : openSteamGame(game)"
-              >
-                <i class="bi bi-play-fill" />
-              </button>
             </div>
             <div
               class="description"
-              @click="game.origin === 'steam' ? openDetail(game) : launchApp (game.nodeKey)"
             >
               <h3 class="title">
                 {{ game.name }}
               </h3>
               <p class="origin">
-                {{ game.origin ? game.origin : 'External' }}
+                
+                <img class="launcherIcon" v-if="game.origin === 'steam' || 'bnet'" :src="'/img/ico/' + game.origin + '.png'" />
+                <span v-else>{{ game.origin ? game.origin : 'External' }}</span>
               </p>
             </div>
             <v-contextmenu :ref="game.name">
@@ -316,7 +313,11 @@ export default {
       gamesLoaded: false,
       apiKey: '882842ac059a4013ad679486b1e64eca',
       SearchGame: '',
-      category: ['All', 'steam', 'bnet', 'local'],
+      category: [
+        {name:'Tout' , tag: 'All', icon: ''},
+        {name:'Steam' , tag: 'steam', icon: '/img/ico/steam.png'},
+        {name:'Battle.net', tag: 'bnet', icon: '/img/ico/bnet.png'},
+        {name:'Local' , tag: 'local', icon: '/img/ico/local.png'}],
       SelectedCat: 'All',
 
       steamPath: [],
@@ -352,6 +353,11 @@ export default {
     this.initialize()
   },
   methods: {
+    playVideo() {
+      setTimeout(() => {
+        this.canReadVideo = true
+      }, 1000)
+    },
     setCat (item) {
       this.SelectedCat = item
     },
@@ -726,6 +732,18 @@ p {
         text-transform: uppercase;
         font-weight: normal;
         transition: all 0.5s;
+        img {
+          width: 34px;
+          margin: auto;
+          filter: grayscale(100%);
+          transition: all 0.5s;
+          &:hover {
+            filter: grayscale(0%);
+          }
+        }
+        p {
+          margin: auto;
+        }
         &:hover {
           color: rgba(white,100%);
           cursor: pointer;
@@ -735,6 +753,9 @@ p {
           color: rgba(white,100%);
           font-weight: 600;
           transform: scale(1.1);
+          img {
+            filter: grayscale(0%);
+          }
         }
       }
     }
@@ -880,26 +901,39 @@ main {
   article {
     counter-increment: rank;
     position: relative;
+    border-radius: 4px;
     overflow: hidden;
     animation: mouseOut 0.3s ease-in;
     color: white;
     text-decoration: none;
+    min-height: 200px;
+    //box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 10px 12px -7px #000000;
 
     .image {
-      position: relative;
+      position: absolute;
       width: 100%;
+      height: 100%;
       border-radius: 4px;
       overflow: hidden;
       display: flex;
       vertical-align: middle;
       justify-content: center;
       background: $card;
-      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+     
       &:after {
         // This forces the image container to be a square
+        position:absolute;
+        top:0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         content: '';
         display: block;
-        padding-bottom: 50%;
+        background: linear-gradient(to top, rgba(24,24,24,1) 0% , rgba(24,24,24,0.9) 20%, rgba(24,24,24,.2) 100%);
+        opacity: 1;
+        z-index: 1;
+        pointer-events: none;
       }
 
       &:before {
@@ -918,28 +952,58 @@ main {
       img {
         position: absolute;
         top: 0;
-        left: 0;
-        width: 100%;
         height:100%;
-        z-index: 10;
+        z-index: 1;
         opacity: 0;
-
+        background-position: cover center;
+        transition: all 0.8s;
         &.active {
           animation: imageFadeIn 0.5s ease-in forwards;
           animation-delay: 0.5s;
         }
       }
     }
-
+    .detailsBtn {
+      position: absolute;
+      top: 5%;
+      right: 3%;
+      color: white;
+      z-index: 999;
+      font-size: 1.1em;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid white;
+      text-align: center;
+      padding-top: 2px;
+      transition: all 0.5s;
+      opacity: 0;
+      &:hover {
+        opacity: 1;
+      }
+    }
     .description {
+      position:absolute;
+      width: 100%;
+      display: flex;
+      vertical-align: middle;
+      bottom: 2%;
+      left:2%;
       padding: 10px 0;
-
+      z-index: 9;
+      user-select: none;
+      pointer-events: none;
       h3,
       p {
         padding: 0 10px;
+        
       }
       h3.title {
-        font-size:18px;
+        font-size:20px;
+        width: 100%;
+        margin:auto;
+        overflow: hidden;
+        text-shadow: 0 0 5px #222129;
       }
       p.origin {
         color: #666;
@@ -947,14 +1011,17 @@ main {
         font-size: 11px;
         font-weight: 700;
         margin-bottom: 0;
-
-        &:before {
-          content: '';
-          display: block;
-          width: 25px;
-          height: 2px;
-          margin-bottom: 4px;
-          background: $card;
+        margin:auto 2%;
+        // &:before {
+        //   content: '';
+        //   display: block;
+        //   width: 25px;
+        //   height: 2px;
+        //   margin-bottom: 4px;
+        //   background: $card;
+        // }
+        .launcherIcon {
+          width: 24px;
         }
       }
     }
@@ -981,6 +1048,12 @@ main {
     animation: mouseOver 0.3s ease-in forwards;
     .launchBtn {
       opacity: 0.8;
+    }
+    .detailsBtn {
+      opacity: 0.8;
+    }
+    .image img {
+      transform: scale(1.05);
     }
   }
 }

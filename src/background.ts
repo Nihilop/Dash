@@ -298,10 +298,10 @@ if (isDevelopment) {
 
 const clientId = '847459425585201182';
 const scopes = ['rpc'];
-let gameName_;
 let discordTimer;
 let discordConnextionTimer;
 let rpc = null;
+let gameName_
 DiscordRPC.register(clientId);
 
 function connectDiscord() {

@@ -23,17 +23,18 @@
             :class="options.activeComponent == ext.id ? 'active' : null "
             @click="selectComponent(index)"
           >
-            <i :class="'bi ' + ext.icon" />
-            <span class="title">{{ ext.name }}</span>
-            <span
-              v-if="ext.notification"
-              class="notification"
-            ><i class="bi bi-bullseye" /></span>
-            <span
-              class="SetAsHome"
-              :class="options.home == ext.id ? 'active' : null"
-              @click.prevent="SetAsHome(ext.id)"
-            ><i :class="options.home == ext.id ? 'bi bi-house-fill' : 'bi bi-house'" /></span>
+              <i :class="'bi ' + ext.icon" />
+              <span class="title">{{ ext.name }}</span>
+              <span
+                v-if="ext.notification"
+                class="notification"
+              ><i class="bi bi-bullseye" /></span>
+              <span
+                class="SetAsHome"
+                :class="options.home == ext.id ? 'active' : null"
+                @click.prevent="SetAsHome(ext.id)"
+              ><i class="" :class="options.home == ext.id ? 'bi bi-house-fill' : 'bi bi-house'" /></span>
+           
           </li>
           <!-- Fixed content to Nav -->
           <li
@@ -227,9 +228,7 @@ $navOffset: 150px;
             &:hover {
               background: rgba(white, 5%) !important;
             }
-            &.active {
-              background: rgba($principal, 10%);
-            }
+            
           }
           .title {
             width: 100%;
@@ -277,6 +276,9 @@ $navOffset: 150px;
       width: $sidebarOpen;
       background: rgba(black, 15%);
       transition: all .5s;
+      li.active {
+        background: rgba($principal, 10%);
+      }
       li.clock {
         transition: all 0.3s;
         font-size: 1.5em;
@@ -314,4 +316,10 @@ $navOffset: 150px;
   }
 }
 
+
+@keyframes makeFlex {
+  100% {
+    display: initial !important;
+  }
+}
 </style>
