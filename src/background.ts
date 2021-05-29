@@ -11,11 +11,11 @@ const storage = require('electron-json-storage')
 const defaultDataPath = storage.getDefaultDataPath()
 storage.setDataPath(defaultDataPath + '/config')
 const dataPath = storage.getDataPath();
-const unhandled = require('electron-unhandled');
+//const unhandled = require('electron-unhandled');
 import DiscordRPC from 'discord-rpc'
 import { autoUpdater } from "electron-updater"
 
-unhandled();
+//unhandled();
 
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -334,37 +334,39 @@ function disconnectDiscord() {
     rpc = null
 }
 
-const activeWindow = require('active-win');
+//const activeWindow = require('active-win');
 
 async function updateStatusMessage() {
-  let processID;
-  await activeWindow().then(data => { processID = data })
-  console.log(processID)
-  
-  if(processID.title.includes(gameName_)) {
-    
-    let appStatus = "none" 
-    if(userStatus === "online") {
-      appStatus = "playing"
-    } else if (userStatus === "busy") {
-      appStatus = "playingbusy"
-    } else if (userStatus === "afk"){
-      appStatus = "playingafk"
-    } else {
-      appStatus = "none"
-    }
-    const data = { play : appStatus, message : `Joue à : ${processID.title || 'rien'}`, game: true}
-    return data
-  } else if(win.isVisible()) {
-    const data = { play : "idle", message : "Ah, il veut jouer ?", game: false}
-    return data
-  } else if(processID.owner.name.includes("Code.exe")) {
-    const data = { play : "coding", message : "Entrain de coder, bruh", game: false}
-    return data
+  //let processID;
+  //await activeWindow().then(data => { processID = data })
+  //console.log(processID)
+
+  let appStatus = "none" 
+  if(userStatus === "online") {
+    appStatus = "playing"
+  } else if (userStatus === "busy") {
+    appStatus = "playingbusy"
+  } else if (userStatus === "afk"){
+    appStatus = "playingafk"
   } else {
-    const data = { play : "none", message : `Joue a la Licorne`, game: false}
-    return data
+    appStatus = "none"
   }
+  
+  // if(processID.title.includes(gameName_)) {
+  //   const data = { play : appStatus, message : `Joue à : ${processID.title || 'rien'}`, game: true}
+  //   return data
+  // } else if(win.isVisible()) {
+  //   const data = { play : "idle", message : "Ah, il veut jouer ?", game: false}
+  //   return data
+  // } else if(processID.owner.name.includes("Code.exe")) {
+  //   const data = { play : "coding", message : "Entrain de coder, bruh", game: false}
+  //   return data
+  // } else {
+  //   const data = { play : "none", message : `Joue a la Licorne`, game: false}
+  //   return data
+  // }
+  const data = { play : appStatus, message : `Joue a la Licorne`, game: true}
+  return data
 }
 
 
