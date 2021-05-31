@@ -1,3 +1,5 @@
+const path = require('path')
+
 module.exports = {
   pluginOptions: {
     electronBuilder: {
@@ -18,6 +20,6 @@ module.exports = {
   },
   lintOnSave: false,
   assetsDir: 'assets/',
-  runtimeCompiler: true  
+  runtimeCompiler: true
 }
 

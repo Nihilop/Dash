@@ -328,7 +328,12 @@ if (!singleInstance) {
       }).on('update-downloaded', (info) => {
         console.log('Téléchargement terminé');
         sendStatusToWindow('Téléchargement terminé');
-        autoUpdater.quitAndInstall(true, true);
+        setTimeout(() => {
+          sendStatusToWindow("L'application redémarrera tout seul.");
+          setTimeout(() => {
+            autoUpdater.quitAndInstall(true, true);
+          }, 2000)
+        }, 1000)
         splash.webContents.send('downloadFinish', true);
       });
       
@@ -380,16 +385,12 @@ if (isDevelopment) {
 }
 
 // Get current window active 
-// const {ProcessListen, getWindows} = require("active-window-listener");
-// const listener = new ProcessListen(["Discord.exe", "Overwatch.exe", "Code.exe"]);
-// listener.changed(data => {
-// 	console.log("Active: ", data)
-// })
-// getWindows().forEach(w => {
-// 	w.getExif().then(tags => {console.log(tags.FileDescription)})
-// })
+const { ProcessListen } = require("active-window-listener");
+const listener = new ProcessListen(["Discord.exe", "Telegram.exe", "Code.exe"]);
 
-
+listener.changed(data => {
+    console.log("Active: ", data)
+})
 
 // Set this to your Client ID.
 
