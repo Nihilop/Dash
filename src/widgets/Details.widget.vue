@@ -264,6 +264,10 @@ export default defineComponent({
         height: auto;
         top:0; left:0;
       }
+      &.miniplayer {
+        height: 100%;
+        z-index: 2;
+      }
       .coverGame {
         position:absolute;
         bottom: 0;

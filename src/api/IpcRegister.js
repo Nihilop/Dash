@@ -4,6 +4,8 @@ import fnCreateNode from '@/lib/fnCreateNode'
 import fnGetSteamApps from '@/lib/fnGetSteamApps'
 import fnGetSteamAppsID from '@/lib/fnGetSteamAppsID'
 import fnCreateBnetNode from '@/lib/fnCreateBnetNode'
+import fnCreateSingleNode from '@/lib/fnCreateSingleNode'
+const log = require('electron-log');
 import _ from 'lodash'
 
 const fs = require('fs')
@@ -50,7 +52,7 @@ class IpcRegister {
     this.ipcMain.on('req_folderContents', async (event, res) => {
       // console.log('ipcMain.on req_folderContents : ')
       const resObj = await this.getFolderContents(res)
-      event.returnValue = JSON.stringify(resObj)
+      event.returnValue = resObj
     })
 
   
@@ -67,6 +69,11 @@ class IpcRegister {
     this.ipcMain.on('req_steam', async (event) => {
       const resObj = await fnGetSteamApps()
       event.returnValue = resObj
+    })
+
+    this.ipcMain.on('req_addExec', async (event, res, name) => {
+      const resObj = await this.setExec(res, name)
+      event.returnValue = JSON.stringify(resObj)
     })
   }
 
@@ -121,6 +128,19 @@ class IpcRegister {
     return returnValue
   }
 
+  setExec(arg, name) {
+    const stat = fs.statSync(arg)
+    const isDirectory = stat.isDirectory()
+    const fileInfo = {
+      rootDir: arg,
+      fileName: name,
+      isDir: isDirectory,
+      stat: stat
+    }
+    const node = fnCreateSingleNode(fileInfo)
+    log.info(node)
+    return node
+  }
   
   getBnetGames (folder) {
     const returnValue = {

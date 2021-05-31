@@ -1,6 +1,7 @@
 'use strict'
-import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow, nativeImage } from 'electron'
+import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow, nativeImage  } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
+const log = require('electron-log');
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import * as os from 'os'
 import IpcRegister from './api/IpcRegister'
@@ -13,7 +14,7 @@ storage.setDataPath(defaultDataPath + '/config')
 const dataPath = storage.getDataPath();
 //const unhandled = require('electron-unhandled');
 import DiscordRPC from 'discord-rpc'
-import { autoUpdater } from "electron-updater"
+const { autoUpdater } = require("electron-updater")
 
 //unhandled();
 
@@ -27,6 +28,7 @@ protocol.registerSchemesAsPrivileged([
 const singleInstance = app.requestSingleInstanceLock()
 let win: BrowserWindow
 let winSettings: BrowserWindow
+let splash: BrowserWindow
 let tray
 const iconTray = nativeImage.createFromPath(path.join(__dirname, '/img/tray.png'))
 let vibrancyOp
@@ -48,7 +50,46 @@ if(isDevelopment) {
   }
 }
 
-console.log(iconStatus.online)
+
+function sendStatusToWindow(text) {
+  log.info(text);
+  splash.webContents.send('message', text);
+}
+function sendSpeedDownload(text) {
+  log.info(text);
+  splash.webContents.send('speed', text);
+}
+function sendPercentageDownload(text) {
+  log.info(text);
+  splash.webContents.send('percentage', text);
+}
+
+function createSplashWindow () {
+  splash = new BrowserWindow({
+    width: 350,
+    height: 500,
+    frame:false,
+    transparent: true,
+    //resizable: false,
+    webPreferences: {
+      nodeIntegration: true,
+    },
+  });
+  createProtocol('app')
+  const splashScreen = process.env.NODE_ENV === 'development' ? 'http://localhost:8080/#updater' : `file://${__dirname}/index.html#updater`
+  splash.loadURL(splashScreen);
+  splash.focus()
+  ipcMain.on('cancelUpdate', () => {
+    splash.close()
+    createWindow()
+    createWindowSettings()
+  })
+  ipcMain.on('app_version', (event) => {
+    event.sender.send('app_version', { version: app.getVersion() });
+  });
+
+  return splash
+}
 
 async function createWindow () {
   // Create the browser window.
@@ -90,17 +131,15 @@ async function createWindow () {
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
     if (!process.env.IS_TEST) win.webContents.openDevTools({ mode: 'detach' })
   } else {
-    createProtocol('app')
+    
     // Load the index.html when not in development
-
+    
     win.loadURL('app://./index.html')
-    autoUpdater.checkForUpdatesAndNotify()
   }
-
+  connectDiscord()
   win.on('blur', () => {
     win.hide()
   })
-
   return win
 }
 
@@ -114,6 +153,10 @@ ipcMain.on('reloadMainWindow', () => {
 })
 ipcMain.on('openSettings', () => {
   winSettings.show()
+})
+
+ipcMain.on('openLauncherWhenSelected', () => {
+  win.show()
 })
 
 function createWindowSettings () {
@@ -218,12 +261,14 @@ if (!singleInstance) {
 
   // Create windows, load the rest of the app, etc...
   app.whenReady().then(() => {
+    createSplashWindow()
+
     const ipcRegister = new IpcRegister(ipcMain)
     ipcRegister.registerOn()
-    createWindowSettings()
+    
     setAutoStart()
     createShortcut()
-    connectDiscord()
+    
     tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
     const contextMenu = Menu.buildFromTemplate([
       { label: "En ligne", click () { userStatus = "online" }, icon: iconStatus.online },
@@ -239,8 +284,55 @@ if (!singleInstance) {
       win.show()
     })
     tray.setContextMenu(contextMenu)
-  }).then(createWindow)
+   
+  }).then(() => {
+    if(splash.isVisible()) {
+      log.warn(process.env.APPDATA + '..\\local\\dash\\pending')
+      setTimeout(() => {
+        autoUpdater.checkForUpdates();
+      }, 3000)
+
+      autoUpdater.on('checking-for-update', () => {
+        sendStatusToWindow('Chargement...');
+      }).on('update-available', (info) => {
+        sendStatusToWindow('Mise à jour trouvée.');
+        setTimeout(() => {
+          sendStatusToWindow('Analyse des données.');
+          splash.webContents.send('updateFound', true);
+        },1000)
+      }).on('update-not-available', (info) => {
+        sendStatusToWindow('Préparez-vous au lancement !');
+        createWindow()
+        createWindowSettings()
+        setTimeout(() => {
+          splash.close()
+        }, 1000)
+      }).on('error', (err) => {
+        sendStatusToWindow(err);
+        splash.webContents.send('UpdaterError', true);
+        createWindow()
+        createWindowSettings()
+        // setTimeout(() => {
+        //   splash.close()
+        // }, 2000)
+      }).on('download-progress', (progressObj) => {
+        let log_message = "Download speed: " + progressObj.bytesPerSecond;
+        log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+        log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+        sendStatusToWindow('Téléchargement en cours...');
+        sendSpeedDownload(progressObj.bytesPerSecond)
+        sendPercentageDownload(progressObj.percent)
+      }).on('update-downloaded', (info) => {
+        console.log('Téléchargement terminé');
+        sendStatusToWindow('Téléchargement terminé');
+        autoUpdater.quitAndInstall(true, true);
+        splash.webContents.send('downloadFinish', true);
+      });
+      
+    }
+  }) 
 }
+
 
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
@@ -258,6 +350,7 @@ app.on('activate', () => {
 })
 
 app.on('ready', async () => {
+  
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
@@ -266,6 +359,7 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
+  
 })
 
 if (isDevelopment) {
@@ -298,29 +392,35 @@ if (isDevelopment) {
 
 const clientId = '847459425585201182';
 const scopes = ['rpc'];
-let gameName_;
 let discordTimer;
 let discordConnextionTimer;
 let rpc = null;
+let gameName_;
+let tryToConnect = 0;
 DiscordRPC.register(clientId);
 
 function connectDiscord() {
   if (!rpc || rpc === null) rpc = new DiscordRPC.Client({ transport: 'ipc' });
   rpc.login({ clientId }).catch((error: string) => {
-      console.error(error);
-      console.debug('[RPC] Error: Make sure Discord client is available and you are connected to the Internet');
-      rpc = null
-      discordConnextionTimer = setInterval(() => {
-        connectDiscord()
-      }, 15e3);
+    console.error(error);
+    console.debug('[RPC] Error: Make sure Discord client is available and you are connected to the Internet');
+    rpc = null
+    if(tryToConnect <= 5) {
+      clearInterval(discordConnextionTimer);
+    }
+    discordConnextionTimer = setInterval(() => {
+      tryToConnect++
+      connectDiscord()
+    }, 15e3);
+    
   });
   rpc.on('ready', () => {
-      console.debug('Discord Client ready');
-      clearInterval(discordConnextionTimer);
-      setActivity();
-      discordTimer = setInterval(() => {
-          setActivity().catch((e: string) => console.error(`Failed to update Discord status. ${e}`));
-      }, 10e3);
+    console.debug('Discord Client ready');
+    clearInterval(discordConnextionTimer);
+    setActivity();
+    discordTimer = setInterval(() => {
+        setActivity().catch((e: string) => console.error(`Failed to update Discord status. ${e}`));
+    }, 10e3);
   });
 }
 
@@ -381,10 +481,10 @@ async function setActivity() {
   }
   const StatusLol = await updateStatusMessage()
   if(StatusLol.game) {
-    const startTimestamp = Date.now();
+    //const startTimestamp = Date.now();
     rpc.setActivity({
       details: StatusLol.message,
-      startTimestamp,
+      //startTimestamp,
       largeImageKey: 'dashou',
       largeImageText: 'Dash - Launcher',
       smallImageKey: StatusLol.play,
