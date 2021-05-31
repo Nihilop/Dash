@@ -8,11 +8,7 @@ module.exports = {
       builderOptions: {
         productName: 'Dash',
         win: {
-          icon: "./build/icons/icon.ico",
-          publisherName: "Nihilo"
-        },
-        nsis: {
-          oneClick: true
+          icon: "./build/icons/icon.ico"
         }
       }
     },
