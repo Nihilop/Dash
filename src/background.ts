@@ -135,6 +135,8 @@ async function createWindow () {
     // Load the index.html when not in development
     
     win.loadURL('app://./index.html')
+    createWindowSettings()
+    autoUpdater.checkForUpdatesAndNotify()
   }
   connectDiscord()
   win.on('blur', () => {
@@ -176,6 +178,8 @@ function createWindowSettings () {
   })
 
   winSettings.loadURL(settingsPath)
+  setAutoStart()
+  createShortcut()
 
   ipcMain.on('closeSettings', () => {
     console.log('close clicked')
@@ -266,8 +270,7 @@ if (!singleInstance) {
     const ipcRegister = new IpcRegister(ipcMain)
     ipcRegister.registerOn()
     
-    setAutoStart()
-    createShortcut()
+    
     
     tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
     const contextMenu = Menu.buildFromTemplate([
