@@ -66,14 +66,16 @@ function getData (appId, cb) {
         // }
 
         obj.app_name = $('.apphub_AppName').first().text().trim()
-        if ($('.game_page_autocollapse_ctn').length) {
-          obj.description = {
-            sectionOne: $('.game_area_description').first().html(),
-            sectionTwo: $('.game_page_autocollapse_ctn').html()
-          }
-        } else {
-          obj.description = $('.game_area_description').first().html()
-        }
+        // if ($('.game_page_autocollapse_ctn').length) {
+        //   obj.description = {
+        //     sectionOne: $('.game_area_description').first().html(),
+        //     sectionTwo: $('.game_page_autocollapse_ctn').html()
+        //   }
+        // } else {
+        //   obj.description = $('.game_area_description').first().html()
+        // }
+
+        obj.description = $('.game_description_snippet').first().html()
         if ($('.highlight_player_item').length) {
           obj.video = $('.highlight_player_item').attr('data-mp4-hd-source')
         } else {

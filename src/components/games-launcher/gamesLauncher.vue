@@ -226,14 +226,15 @@
       :close-btn="false"
     >
       <template #header>
-        Ajouter au launcher manuellement
+        Ajouter au launcher
       </template>
       <template #body>
-        <p> Ajouter : {{localFileSelected ? localFileSelected.name : null}}</p>
+        <p style="color:rgba(255,255,255,0.4), font-weight: 200; font-size:12px; margin-bottom: 34px"><i class="bi bi-exclamation-triangle-fill" style="color:red;"></i> Attention, merci de bien selectionner l'executable du jeu </p>
         <label for="HandAdd" class="AddLauncher"> {{localFileSelected ? localFileSelected.name : 'Selectionne ton executable'}}</label>
         <input
           id="HandAdd"
           type="file"
+          ref="fileAdd"
           placeholder="Ajouter"
           @change="previewFiles"
           accept=".exe, .ink, application/x-ms-shortcut, application/x-msdos-program">
@@ -243,7 +244,7 @@
         <button
           type="primary"
           class="closed"
-          @click="manualAdd = false"
+          @click="resetFieldAdd(), (manualAdd = false)"
         >
           Annuler
         </button>
@@ -371,6 +372,12 @@ export default {
       this.localFileSelected = JSON.parse(file)
       console.log(this.localFileSelected)
     },
+    resetFieldAdd() {
+      //document.getElementById('HandAdd').value = null
+      this.localFileSelected = null
+      this.$refs.fileAdd.value= null
+      console.log(this.localFileSelected)
+    },
     playVideo() {
       setTimeout(() => {
         this.canReadVideo = true
@@ -466,7 +473,8 @@ export default {
       // Boucles logiques
       origins.forEach(FoldersPath => {
         const res = electron.ipcRenderer.sendSync('req_folderContents', FoldersPath.id)
-        const resParse = JSON.parse(res)
+        const resParse = res
+        console.log(res)
         const newContents = resParse.contents
         resultPath_.push(newContents)
         this.loadMessage = 'Recherche des racines Steam'
@@ -544,6 +552,7 @@ export default {
 
       if (allKeys.includes(item.data.stat.ino) === false) {
         await this.indexDbGame.add(this.dbGmName, JSON.parse(JSON.stringify(item)), item.data.stat.ino)
+        this.resetFieldAdd()
         setTimeout(() => {
           this.SteamLoading = 1
           this.loadMessage = 'Ajouts terminés'
@@ -554,6 +563,7 @@ export default {
         }, 1000)
         
       } else {
+        this.resetFieldAdd()
         setTimeout(() => {
           this.SteamLoading = 1
           this.loadMessage = 'Aucun élément ajouter'
@@ -698,15 +708,32 @@ input[type="file"] {
     height: 1px;
 }
 label.AddLauncher {
+  position:relative;
   display: block;
   width: 100%;
   padding: 12px 15px;
-  background:$principal;
   transition: all 0.5s;
+  overflow: hidden;
+  border-radius: 5px;
+  &::before {
+    position:absolute;
+    content: '';
+    width:100%;
+    height: 100%;
+    transform: translateY(calc(100% - 2px));
+    bottom:0;
+    left: 0;
+    background:$principal;
+    transition: all 0.5s;
+    z-index: -1;
+  }
   &:hover {
+    &::before {
+      transform: translateY(0);
+      background: darken($principal, 5%);
+    }
     color:white;
-    font-weight: bolder;
-    background: darken($principal, 5%);
+    font-weight: bold;
   }
 }
 .searchAndFilter {
