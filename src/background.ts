@@ -82,6 +82,7 @@ function createSplashWindow () {
   ipcMain.on('cancelUpdate', () => {
     splash.close()
     createWindow()
+    createWindowSettings()
   })
   ipcMain.on('app_version', (event) => {
     event.sender.send('app_version', { version: app.getVersion() });
@@ -152,6 +153,10 @@ ipcMain.on('reloadMainWindow', () => {
 })
 ipcMain.on('openSettings', () => {
   winSettings.show()
+})
+
+ipcMain.on('openLauncherWhenSelected', () => {
+  win.show()
 })
 
 function createWindowSettings () {
@@ -257,9 +262,10 @@ if (!singleInstance) {
   // Create windows, load the rest of the app, etc...
   app.whenReady().then(() => {
     createSplashWindow()
+
     const ipcRegister = new IpcRegister(ipcMain)
     ipcRegister.registerOn()
-    createWindowSettings()
+    
     setAutoStart()
     createShortcut()
     
@@ -284,7 +290,7 @@ if (!singleInstance) {
       log.warn(process.env.APPDATA + '..\\local\\dash\\pending')
       setTimeout(() => {
         autoUpdater.checkForUpdates();
-      }, 5000)
+      }, 3000)
 
       autoUpdater.on('checking-for-update', () => {
         sendStatusToWindow('Chargement...');
@@ -297,13 +303,15 @@ if (!singleInstance) {
       }).on('update-not-available', (info) => {
         sendStatusToWindow('Préparez-vous au lancement !');
         createWindow()
+        createWindowSettings()
         setTimeout(() => {
           splash.close()
-        }, 2000)
+        }, 1000)
       }).on('error', (err) => {
         sendStatusToWindow(err);
         splash.webContents.send('UpdaterError', true);
         createWindow()
+        createWindowSettings()
         // setTimeout(() => {
         //   splash.close()
         // }, 2000)

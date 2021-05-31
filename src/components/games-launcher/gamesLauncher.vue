@@ -229,16 +229,28 @@
         Ajouter au launcher manuellement
       </template>
       <template #body>
-        <p> Add</p>
+        <p> Ajouter : {{localFileSelected ? localFileSelected.name : null}}</p>
+        <label for="HandAdd" class="AddLauncher"> {{localFileSelected ? localFileSelected.name : 'Selectionne ton executable'}}</label>
         <input
+          id="HandAdd"
           type="file"
           placeholder="Ajouter"
-        >
+          @change="previewFiles"
+          accept=".exe, .ink, application/x-ms-shortcut, application/x-msdos-program">
+        
       </template>
       <template #actions>
         <button
           type="primary"
+          class="closed"
           @click="manualAdd = false"
+        >
+          Annuler
+        </button>
+        <button
+          type="primary"
+          v-if='localFileSelected'
+          @click="addToLauncher(localFileSelected) ,(manualAdd = false)"
         >
           Ajouter
         </button>
@@ -267,7 +279,6 @@ import modal from '@/widgets/Dialog.widget'
 import gameDetails from '@/widgets/Details.widget.vue'
 import { Promised } from 'vue-promised'
 import path from 'path'
-
 // Impots libs
 const scraper = require('@/lib/steamScraper')
 const fs = require('fs')
@@ -307,6 +318,7 @@ export default {
       steamModal: false,
       gameDetails: false,
       manualAdd: false,
+      localFileSelected: null,
       gameData: {},
       SteamLoading: 0,
       loadMessage: '',
@@ -353,6 +365,12 @@ export default {
     this.initialize()
   },
   methods: {
+    async previewFiles(event) {
+      electron.ipcRenderer.send('openLauncherWhenSelected')
+      const file = electron.ipcRenderer.sendSync('req_addExec', event.target.files[0].path, event.target.files[0].name)
+      this.localFileSelected = JSON.parse(file)
+      console.log(this.localFileSelected)
+    },
     playVideo() {
       setTimeout(() => {
         this.canReadVideo = true
@@ -674,6 +692,23 @@ p {
     line-height: 1.5em;
 }
 
+input[type="file"] {
+    visibility: hidden;
+    width: 1px;
+    height: 1px;
+}
+label.AddLauncher {
+  display: block;
+  width: 100%;
+  padding: 12px 15px;
+  background:$principal;
+  transition: all 0.5s;
+  &:hover {
+    color:white;
+    font-weight: bolder;
+    background: darken($principal, 5%);
+  }
+}
 .searchAndFilter {
   min-height: 150px;
   border-bottom: 1px solid rgba(white,5%);
