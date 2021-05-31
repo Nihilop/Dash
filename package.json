@@ -33,6 +33,7 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "nan": "^2.14.2",
+    "node-loader": "^1.0.3",
     "path-directories": "^1.0.2",
     "ps-node": "^0.1.6",
     "request": "^2.88.2",

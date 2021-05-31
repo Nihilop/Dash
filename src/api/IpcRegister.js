@@ -50,9 +50,9 @@ class IpcRegister {
     })
 
     this.ipcMain.on('req_folderContents', async (event, res) => {
-      // console.log('ipcMain.on req_folderContents : ')
+      log.warn('ipcMain.on req_folderContents : ' + res)
       const resObj = await this.getFolderContents(res)
-      event.returnValue = resObj
+      event.returnValue = JSON.stringify(resObj)
     })
 
   

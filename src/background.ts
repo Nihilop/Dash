@@ -1,23 +1,23 @@
 'use strict'
-import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow, nativeImage  } from 'electron'
+import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow, nativeImage } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-const log = require('electron-log');
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import * as os from 'os'
 import IpcRegister from './api/IpcRegister'
-import fs from "fs"
+import fs from 'fs'
 import path from 'path'
+// const unhandled = require('electron-unhandled');
+import DiscordRPC from 'discord-rpc'
+
+const log = require('electron-log')
 const { setVibrancy } = require('electron-acrylic-window')
 const storage = require('electron-json-storage')
 const defaultDataPath = storage.getDefaultDataPath()
 storage.setDataPath(defaultDataPath + '/config')
-const dataPath = storage.getDataPath();
-//const unhandled = require('electron-unhandled');
-import DiscordRPC from 'discord-rpc'
-const { autoUpdater } = require("electron-updater")
+const dataPath = storage.getDataPath()
+const { autoUpdater } = require('electron-updater')
 
-//unhandled();
-
+// unhandled();
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const isWindows10 = process.platform === 'win32' && os.release().split('.')[0] === '10'
@@ -32,14 +32,14 @@ let splash: BrowserWindow
 let tray
 const iconTray = nativeImage.createFromPath(path.join(__dirname, '/img/tray.png'))
 let vibrancyOp
-let userStatus = "online"
+let userStatus = 'online'
 let iconStatus
-if(isDevelopment) {
+if (isDevelopment) {
   iconStatus = {
-    online:  path.join(__dirname, '../public/img/status/online.png'),
+    online: path.join(__dirname, '../public/img/status/online.png'),
     busy: path.join(__dirname, '../public/img/status/busy.png'),
     afk: path.join(__dirname, '../public/img/status/afk.png'),
-    offline:path.join(__dirname, '../public/img/status/offline.png')
+    offline: path.join(__dirname, '../public/img/status/offline.png')
   }
 } else {
   iconStatus = {
@@ -50,34 +50,33 @@ if(isDevelopment) {
   }
 }
 
-
-function sendStatusToWindow(text) {
-  log.info(text);
-  splash.webContents.send('message', text);
+function sendStatusToWindow (text) {
+  log.info(text)
+  splash.webContents.send('message', text)
 }
-function sendSpeedDownload(text) {
-  log.info(text);
-  splash.webContents.send('speed', text);
+function sendSpeedDownload (text) {
+  log.info(text)
+  splash.webContents.send('speed', text)
 }
-function sendPercentageDownload(text) {
-  log.info(text);
-  splash.webContents.send('percentage', text);
+function sendPercentageDownload (text) {
+  log.info(text)
+  splash.webContents.send('percentage', text)
 }
 
 function createSplashWindow () {
   splash = new BrowserWindow({
     width: 350,
     height: 500,
-    frame:false,
+    frame: false,
     transparent: true,
-    //resizable: false,
+    // resizable: false,
     webPreferences: {
-      nodeIntegration: true,
-    },
-  });
+      nodeIntegration: true
+    }
+  })
   createProtocol('app')
   const splashScreen = process.env.NODE_ENV === 'development' ? 'http://localhost:8080/#updater' : `file://${__dirname}/index.html#updater`
-  splash.loadURL(splashScreen);
+  splash.loadURL(splashScreen)
   splash.focus()
   ipcMain.on('cancelUpdate', () => {
     splash.close()
@@ -85,8 +84,8 @@ function createSplashWindow () {
     createWindowSettings()
   })
   ipcMain.on('app_version', (event) => {
-    event.sender.send('app_version', { version: app.getVersion() });
-  });
+    event.sender.send('app_version', { version: app.getVersion() })
+  })
 
   return splash
 }
@@ -131,14 +130,13 @@ async function createWindow () {
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
     if (!process.env.IS_TEST) win.webContents.openDevTools({ mode: 'detach' })
   } else {
-    
     // Load the index.html when not in development
-    
+    connectDiscord()
     win.loadURL('app://./index.html')
     createWindowSettings()
     autoUpdater.checkForUpdatesAndNotify()
   }
-  connectDiscord()
+  
   win.on('blur', () => {
     win.hide()
   })
@@ -183,7 +181,7 @@ function createWindowSettings () {
 
   ipcMain.on('closeSettings', () => {
     console.log('close clicked')
-    app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) }) 
+    app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) })
     app.exit(0)
   })
 
@@ -192,51 +190,48 @@ function createWindowSettings () {
 
 initParams()
 
-function initParams() {
-  const InitOptions = { parameters: { trigger: "Ctrl+G", nickname: "Non renseigner", autostart: true }}
+function initParams () {
+  const InitOptions = { parameters: { trigger: 'Ctrl+G', nickname: 'Non renseigner', autostart: true } }
   const jsonString = JSON.stringify(InitOptions)
   const dbPath = dataPath + '\\preferences.json'
 
-  if(fs.existsSync(dataPath)) {
+  if (fs.existsSync(dataPath)) {
     fs.writeFile(dbPath, jsonString, { flag: 'wx' }, (err) => {
       if (err) {
         console.log('Le fichier preferences existe déjà')
-        return 
-      };
-    }); 
+      }
+    })
   } else {
     const defaultDataPath = storage.getDefaultDataPath()
     storage.setDataPath(defaultDataPath + '/config')
     setTimeout(() => {
       initParams()
-    }, 1000)    
+    }, 1000)
   }
-
-  return 
 }
-function setAutoStart() {
-  if(fs.existsSync(dataPath + '\\preferences.json')) {
+function setAutoStart () {
+  if (fs.existsSync(dataPath + '\\preferences.json')) {
     storage.get('preferences', function (error, settings) {
       if (error) {
         console.log(error)
       }
-      let autostart = settings.parameters.autostart
+      const autostart = settings.parameters.autostart
       app.setLoginItemSettings({
-        name:"Dash - Launcher",
+        name: 'Dash - Launcher',
         openAtLogin: autostart
       })
     })
   } else {
     setTimeout(() => {
       setAutoStart()
-    }, 2000)   
+    }, 2000)
   }
 }
 function createShortcut () {
-  if(fs.existsSync(dataPath + '\\preferences.json')) {
+  if (fs.existsSync(dataPath + '\\preferences.json')) {
     storage.get('preferences', function (error, settings) {
       if (error) throw error
-      let shortcut = settings.parameters.trigger
+      const shortcut = settings.parameters.trigger
       globalShortcut.register(shortcut, () => {
         if (win.isVisible()) {
           win.hide()
@@ -248,10 +243,10 @@ function createShortcut () {
         }
       })
     })
-  }else {
+  } else {
     setTimeout(() => {
       createShortcut()
-    }, 2000)   
+    }, 2000)
   }
 }
 
@@ -266,81 +261,76 @@ if (!singleInstance) {
   // Create windows, load the rest of the app, etc...
   app.whenReady().then(() => {
     createSplashWindow()
-
+    
     const ipcRegister = new IpcRegister(ipcMain)
     ipcRegister.registerOn()
-    
-    
-    
+
     tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
     const contextMenu = Menu.buildFromTemplate([
-      { label: "En ligne", click () { userStatus = "online" }, icon: iconStatus.online },
-      { label: "Ne pas déranger", click () { userStatus = "busy" }, icon: iconStatus.busy },
-      { label: "Inactif", click () { userStatus = "afk" }, icon: iconStatus.afk },
-      { label: "Hors ligne", click () { userStatus = "offline" }, icon: iconStatus.offline },
+      { label: 'En ligne', click () { userStatus = 'online' }, icon: iconStatus.online },
+      { label: 'Ne pas déranger', click () { userStatus = 'busy' }, icon: iconStatus.busy },
+      { label: 'Inactif', click () { userStatus = 'afk' }, icon: iconStatus.afk },
+      { label: 'Hors ligne', click () { userStatus = 'offline' }, icon: iconStatus.offline },
       { type: 'separator' },
       { label: "Ouvrir l'application", click () { win.show() } },
       { label: 'Options', click () { winSettings.show() } },
       { label: 'Quitter', click () { app.quit() } }
     ])
-    tray.on('double-click', function() {
+    tray.on('double-click', function () {
       win.show()
     })
     tray.setContextMenu(contextMenu)
-   
   }).then(() => {
-    if(splash.isVisible()) {
+    if (splash.isVisible()) {
       log.warn(process.env.APPDATA + '..\\local\\dash\\pending')
       setTimeout(() => {
-        autoUpdater.checkForUpdates();
+        autoUpdater.checkForUpdates()
       }, 3000)
 
       autoUpdater.on('checking-for-update', () => {
-        sendStatusToWindow('Chargement...');
+        sendStatusToWindow('Chargement...')
       }).on('update-available', (info) => {
-        sendStatusToWindow('Mise à jour trouvée.');
+        sendStatusToWindow('Mise à jour trouvée.')
         setTimeout(() => {
-          sendStatusToWindow('Analyse des données.');
-          splash.webContents.send('updateFound', true);
-        },1000)
+          sendStatusToWindow('Analyse des données.')
+          splash.webContents.send('updateFound', true)
+        }, 1000)
       }).on('update-not-available', (info) => {
-        sendStatusToWindow('Préparez-vous au lancement !');
+        sendStatusToWindow('Préparez-vous au lancement !')
         createWindow()
         createWindowSettings()
         setTimeout(() => {
           splash.close()
         }, 1000)
       }).on('error', (err) => {
-        sendStatusToWindow(err);
-        splash.webContents.send('UpdaterError', true);
+        sendStatusToWindow(err)
+        splash.webContents.send('UpdaterError', true)
         createWindow()
         createWindowSettings()
         // setTimeout(() => {
         //   splash.close()
         // }, 2000)
       }).on('download-progress', (progressObj) => {
-        let log_message = "Download speed: " + progressObj.bytesPerSecond;
-        log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-        log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
-        sendStatusToWindow('Téléchargement en cours...');
+        let log_message = 'Download speed: ' + progressObj.bytesPerSecond
+        log_message = log_message + ' - Downloaded ' + progressObj.percent + '%'
+        log_message = log_message + ' (' + progressObj.transferred + '/' + progressObj.total + ')'
+        sendStatusToWindow('Téléchargement en cours...')
         sendSpeedDownload(progressObj.bytesPerSecond)
         sendPercentageDownload(progressObj.percent)
       }).on('update-downloaded', (info) => {
-        console.log('Téléchargement terminé');
-        sendStatusToWindow('Téléchargement terminé');
+        console.log('Téléchargement terminé')
+        sendStatusToWindow('Téléchargement terminé')
         setTimeout(() => {
-          sendStatusToWindow("L'application redémarrera tout seul.");
+          sendStatusToWindow("L'application redémarrera tout seul.")
           setTimeout(() => {
-            autoUpdater.quitAndInstall(true, true);
+            autoUpdater.quitAndInstall(true, true)
           }, 2000)
         }, 1000)
-        splash.webContents.send('downloadFinish', true);
-      });
-      
+        splash.webContents.send('downloadFinish', true)
+      })
     }
-  }) 
+  })
 }
-
 
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
@@ -358,7 +348,6 @@ app.on('activate', () => {
 })
 
 app.on('ready', async () => {
-  
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
@@ -367,7 +356,6 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  
 })
 
 if (isDevelopment) {
@@ -384,77 +372,74 @@ if (isDevelopment) {
   }
 }
 
-// Get current window active 
-const { ProcessListen } = require("active-window-listener");
-const listener = new ProcessListen(["Discord.exe", "Telegram.exe", "Code.exe"]);
+// Get current window active
+// const { ProcessListen } = require('active-window-listener')
+// const listener = new ProcessListen(['Discord.exe', 'Telegram.exe', 'Code.exe'])
 
-listener.changed(data => {
-    console.log("Active: ", data)
-})
+// listener.changed(data => {
+//   console.log('Active: ', data)
+// })
 
 // Set this to your Client ID.
 
-const clientId = '847459425585201182';
-const scopes = ['rpc'];
-let discordTimer;
-let discordConnextionTimer;
-let rpc = null;
-let gameName_;
-let tryToConnect = 0;
-DiscordRPC.register(clientId);
+const clientId = '847459425585201182'
+const scopes = ['rpc']
+let discordTimer
+let discordConnextionTimer
+let rpc = null
+let gameName_
+let tryToConnect = 0
+DiscordRPC.register(clientId)
 
-function connectDiscord() {
-  if (!rpc || rpc === null) rpc = new DiscordRPC.Client({ transport: 'ipc' });
+function connectDiscord () {
+  if (!rpc || rpc === null) rpc = new DiscordRPC.Client({ transport: 'ipc' })
   rpc.login({ clientId }).catch((error: string) => {
-    console.error(error);
-    console.debug('[RPC] Error: Make sure Discord client is available and you are connected to the Internet');
+    console.error(error)
+    console.debug('[RPC] Error: Make sure Discord client is available and you are connected to the Internet')
     rpc = null
-    if(tryToConnect <= 5) {
-      clearInterval(discordConnextionTimer);
+    if (tryToConnect <= 5) {
+      clearInterval(discordConnextionTimer)
     }
     discordConnextionTimer = setInterval(() => {
       tryToConnect++
       connectDiscord()
-    }, 15e3);
-    
-  });
+    }, 15e3)
+  })
   rpc.on('ready', () => {
-    console.debug('Discord Client ready');
-    clearInterval(discordConnextionTimer);
-    setActivity();
+    console.debug('Discord Client ready')
+    clearInterval(discordConnextionTimer)
+    setActivity()
     discordTimer = setInterval(() => {
-        setActivity().catch((e: string) => console.error(`Failed to update Discord status. ${e}`));
-    }, 10e3);
-  });
+      setActivity().catch((e: string) => console.error(`Failed to update Discord status. ${e}`))
+    }, 10e3)
+  })
 }
 
-
-
-function disconnectDiscord() {
-    rpc.clearActivity();
-    clearInterval(discordTimer);
-    rpc.destroy();
-    rpc = null
+function disconnectDiscord () {
+  rpc.clearActivity()
+  clearInterval(discordTimer)
+  rpc.destroy()
+  rpc = null
 }
 
-//const activeWindow = require('active-win');
+// const activeWindow = require('active-win');
 
-async function updateStatusMessage() {
-  //let processID;
-  //await activeWindow().then(data => { processID = data })
-  //console.log(processID)
+async function updateStatusMessage () {
+  // let processID;
+  // await activeWindow().then(data => { processID = data })
+  // console.log(processID)
 
-  let appStatus = "none" 
-  if(userStatus === "online") {
-    appStatus = "playing"
-  } else if (userStatus === "busy") {
-    appStatus = "playingbusy"
-  } else if (userStatus === "afk"){
-    appStatus = "playingafk"
+  let appStatus = 'none'
+  if (userStatus === 'online') {
+    appStatus = 'playing'
+  } else if (userStatus === 'busy') {
+    appStatus = 'playingbusy'
+  } else if (userStatus === 'afk') {
+    appStatus = 'playingafk'
   } else {
-    appStatus = "none"
+    appStatus = 'none'
   }
-  
+
   // if(processID.title.includes(gameName_)) {
   //   const data = { play : appStatus, message : `Joue à : ${processID.title || 'rien'}`, game: true}
   //   return data
@@ -468,41 +453,38 @@ async function updateStatusMessage() {
   //   const data = { play : "none", message : `Joue a la Licorne`, game: false}
   //   return data
   // }
-  const data = { play : appStatus, message : `Joue a la Licorne`, game: true}
+  const data = { play: appStatus, message: 'Joue a la Licorne', game: true }
   return data
 }
 
-
-ipcMain.on('game_launch',function(event, data) {
-  console.log('Game ' + data + ' launched') 
+ipcMain.on('game_launch', function (event, data) {
+  console.log('Game ' + data + ' launched')
   gameName_ = data
   updateStatusMessage()
 })
 
-async function setActivity() {
+async function setActivity () {
   if (!rpc || !win) {
-    return;
+    return
   }
   const StatusLol = await updateStatusMessage()
-  if(StatusLol.game) {
-    //const startTimestamp = Date.now();
+  if (StatusLol.game) {
+    // const startTimestamp = Date.now();
     rpc.setActivity({
       details: StatusLol.message,
-      //startTimestamp,
+      // startTimestamp,
       largeImageKey: 'dashou',
       largeImageText: 'Dash - Launcher',
       smallImageKey: StatusLol.play,
-      instance: false,
-    });
+      instance: false
+    })
   } else {
     rpc.setActivity({
       state: StatusLol.message,
       largeImageKey: 'dashou',
       largeImageText: 'Dash - Launcher',
       smallImageKey: StatusLol.play,
-      instance: false,
-    });
+      instance: false
+    })
   }
 }
-
-

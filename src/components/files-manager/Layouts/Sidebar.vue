@@ -19,18 +19,15 @@ export default defineComponent({
     const nickname = ref(null)
     const isActive = ref(null)
     const currentList = ref(null)
-
     function isLoaded () {
       isActive.value = true
     }
-
     onMounted(() => {
       const defaultDataPath = storage.getDefaultDataPath()
       storage.setDataPath(defaultDataPath + '/config')
       const data = storage.getSync('preferences') || {}
       nickname.value = data.parameters.nickname
     })
-
     return {
       nickname,
       currentList,
@@ -50,12 +47,10 @@ export default defineComponent({
       this.$store.dispatch('FOLDER_CONTENTS', newContents)
     }
   }
-
 })
 </script>
 <style lang="scss" scoped>
 @import '@/assets/style/global.scss';
-
 #sidebar {
   position: sticky;
   top:0;
@@ -75,7 +70,6 @@ export default defineComponent({
     overflow-y: auto;
   }
 }
-
 .viewbar {
   position:relative;
   display: block;
@@ -89,5 +83,4 @@ export default defineComponent({
   font-weight: 300;
   text-align: center;
 }
-
 </style>

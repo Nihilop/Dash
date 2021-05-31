@@ -1,3 +1,4 @@
+  
 const path = require('path')
 
 module.exports = {
@@ -12,7 +13,15 @@ module.exports = {
         win: {
           icon: "./build/icons/icon.ico"
         }
-      }
+      },
+      chainWebpackMainProcess: (config) => {
+        config.module
+          .rule("node")
+          .test(/\.node$/)
+          .use("node-loader")
+          .loader("node-loader")
+          .end();
+      },
     },
     autoRouting: {
       chunkNamePrefix: 'page-'
@@ -22,4 +31,3 @@ module.exports = {
   assetsDir: 'assets/',
   runtimeCompiler: true
 }
-

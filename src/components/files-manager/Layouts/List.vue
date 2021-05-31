@@ -199,7 +199,6 @@ export default defineComponent({
     function isLoaded () {
       isActive.value = true
     }
-
     return {
       isLoaded,
       isActive,
@@ -227,7 +226,6 @@ export default defineComponent({
         this.$store.dispatch('SHOW_SIDEBAR', false)
       }
     }
-
   },
   async created () {
     setTimeout(() => {
@@ -277,7 +275,6 @@ export default defineComponent({
     async setGameList () {
       const allItems = await this.indexDbGame.getAll(this.dbGmName)
       const allKeys = await this.indexDbGame.getAllKeys(this.dbGmName)
-
       this.$store.dispatch('GAME_LIST', allItems)
       this.$store.dispatch('GAME_KEYS', allKeys)
     },
@@ -295,7 +292,6 @@ export default defineComponent({
     async setFavList () {
       const allItems = await this.indexDb.getAll(this.dbTbName)
       const allKeys = await this.indexDb.getAllKeys(this.dbTbName)
-
       this.$store.dispatch('FAV_LIST', allItems)
       this.$store.dispatch('FAV_KEYS', allKeys)
     },
@@ -322,11 +318,9 @@ export default defineComponent({
     },
     backBtn () {
       if (this.$store.state.selectedFolder === localStorage.rootdir) {
-
       } else {
         var str = this.$store.state.selectedFolder
         const getLastItem = thePath => thePath.substring(0, thePath.lastIndexOf('\\'))
-
         console.log('onUpdateActiveFolder item : ', getLastItem(str))
         this.$store.dispatch('SELECTED_FOLDER', getLastItem(str))
         this.$store.dispatch('CURRENT_FOLDER', getLastItem(str))
@@ -338,7 +332,6 @@ export default defineComponent({
         this.$store.dispatch('FOLDER_CONTENTS', newContents)
       }
     },
-
     onDbClickItem (item) {
       if (item.expandable) {
         try {
@@ -386,7 +379,6 @@ $white: hsla(180, 14%, 97%, 1);
 $principal: $selectColor;
 $secondary: hsla(219, 8%, 53%, 1);
 $accept : #27ae60;
-
 .Fav {
   display: flex;
   vertical-align: middle;
@@ -406,12 +398,10 @@ $accept : #27ae60;
     opacity:1;
   }
 }
-
 .scrollable {
   height: calc(100vh - 80px);
   overflow: scroll;
 }
-
 .listMode {
   position:relative;
   width: 100%;
@@ -419,7 +409,6 @@ $accept : #27ae60;
   user-select: none;
   margin-bottom: 50px;
   .headerBlock {
-
     display: block;
     padding: 0 50px;
     height: 50px;
@@ -432,14 +421,12 @@ $accept : #27ae60;
       text-align: left;
       height: 100%;
       color: rgba(white, 20%);
-
       th {
         display: block;
         margin:auto;
         padding: 5px 15px;
         box-sizing: border-box;
         border-right: 1px solid rgba(white,5%);
-
         &:last-child {
           border: none;
         }
@@ -505,7 +492,6 @@ $accept : #27ae60;
     }
   }
 }
-
 @keyframes Glowed {
   0% {
     box-shadow: 0 0 0 1rem rgba(255, 255, 255, 0), 0 0 5rem -2rem $principal; }
@@ -520,7 +506,6 @@ $accept : #27ae60;
     box-shadow: 0 0 0 0.1rem rgba($principal, 10%); }
   100% {
     box-shadow: 0 0 0 0.2rem rgba($principal, 100%); } }
-
 .breadAndBack {
   display: block;
   padding: 50px 150px;
@@ -529,14 +514,12 @@ $accept : #27ae60;
     margin: auto;
   }
 }
-
 .breadcrumbs {
   font-size: 2em;
   color: rgba(white, 30%);
   font-weight: 800;
   margin-left: 24px;
 }
-
 .btn {
   background:none;
   border: none;
@@ -550,7 +533,6 @@ $accept : #27ae60;
     color:white;
   }
 }
-
 .NoResults {
   width:100%;
   height: 70vh;
@@ -565,5 +547,4 @@ $accept : #27ae60;
     }
   }
 }
-
 </style>
