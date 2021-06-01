@@ -1,6 +1,5 @@
   
 const path = require('path')
-
 module.exports = {
   pluginOptions: {
     electronBuilder: {
@@ -14,6 +13,11 @@ module.exports = {
           icon: "./build/icons/icon.ico"
         }
       },
+      externals: ["active-window-listener"],
+      asar: true,
+      // asarUnpack: [
+      //   "node_modules/active-window-listener",
+      // ],
       chainWebpackMainProcess: (config) => {
         config.module
           .rule("node")

@@ -74,7 +74,7 @@
 <script>
 
 const electron = window.require ? window.require('electron') : null
-const storage = require('electron-json-storage')
+import settings from 'electron-settings';
 export default {
   name: 'Settings',
   data () {
@@ -89,25 +89,18 @@ export default {
     this.syncData()
   },
   methods: {
-    syncData () {
-      const defaultDataPath = storage.getDefaultDataPath()
-      console.log(defaultDataPath)
-      storage.setDataPath(defaultDataPath + '/config')
-      console.log(defaultDataPath)
-      const data = storage.getSync('preferences')
-      console.log(data)
-      this.nickname = data.parameters.nickname
-      this.shortcut = data.parameters.trigger
-      this.startup = data.parameters.autostart
+    async syncData () {
+      this.nickname = await settings.get('parameters.name');
+      this.shortcut = await settings.get('parameters.trigger');
+      this.startup = await settings.get('parameters.autostart');
     },
-    save () {
-      const data = { parameters: { trigger: this.shortcut, nickname: this.nickname, autostart: this.startup } }
-      console.log(data)
-      storage.set('preferences', data, function (error) {
-        if (error) throw error
-        electron.ipcRenderer.sendSync('reloadMainWindow')
-      })
-      this.closeApp()
+    async save () {
+      await settings.set('parameters', {
+        name: this.nickname,
+        trigger: this.shortcut,
+        autostart: this.startup
+      });
+      electron.ipcRenderer.sendSync('closeSettings', true)
     },
     closeApp () {
       electron.ipcRenderer.sendSync('closeSettings', true)

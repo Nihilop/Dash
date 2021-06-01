@@ -1,6 +1,6 @@
 {
   "name": "dash",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -20,9 +20,9 @@
     "core-js": "^3.6.5",
     "discord-rpc": "^3.2.0",
     "electron-acrylic-window": "^0.5.5",
-    "electron-json-storage": "^4.5.0",
     "electron-log": "^4.3.5",
     "electron-rebuild": "^2.3.5",
+    "electron-settings": "^4.0.2",
     "electron-unhandled": "^3.0.2",
     "electron-updater": "^4.3.9",
     "express": "^4.17.1",
@@ -61,7 +61,7 @@
     "@vue/compiler-sfc": "^3.0.0",
     "@vue/eslint-config-standard": "^5.1.2",
     "@vue/eslint-config-typescript": "^7.0.0",
-    "electron": "11.0.0",
+    "electron": "11.0.4",
     "electron-devtools-installer": "^3.1.0",
     "eslint": "^6.7.2",
     "eslint-plugin-import": "^2.20.2",

@@ -286,6 +286,7 @@ const fs = require('fs')
 const electron = window.require ? window.require('electron') : null
 const { shell, Notification  } = require('electron')
 
+
 /* eslint-disable no-alert, no-console */
 function getValues (obj, key) {
   var objects = []
@@ -336,7 +337,8 @@ export default {
       steamPath: [],
       bnetPath: [],
       originPath: [],
-      epicPath: []
+      epicPath: [],
+      gameListed: []
     }
   },
   computed: {
@@ -358,6 +360,11 @@ export default {
       }
 
       return this.$store.state.gameList
+    },
+    gameList() {
+      return this.$store.state.gameList.filter(item => {
+        return item.label
+      })
     }
 
   },
@@ -376,7 +383,7 @@ export default {
       //document.getElementById('HandAdd').value = null
       this.localFileSelected = null
       this.$refs.fileAdd.value= null
-      console.log(this.localFileSelected)
+      //console.log(this.localFileSelected)
     },
     playVideo() {
       setTimeout(() => {
@@ -394,7 +401,7 @@ export default {
       this.initIndexDbGame()
       this.indexDbGame = await this.initIndexDbGame()
       console.log('initialize indexDb : ', this.indexDbGame)
-      this.setGameList()
+      this.setGameList()      
     },
     async initIndexDbGame () {
       return await openDB(this.dbName2, 2, {
@@ -438,7 +445,7 @@ export default {
 
         const bnetGamesfolders = electron.ipcRenderer.sendSync('req_bnet', clientRoot)
         const bnetContents = bnetGamesfolders.contents
-        console.log(bnetContents)
+        //console.log(bnetContents)
 
         if(bnetContents.length > 0) {
           bnetContents.forEach(elem => {
@@ -469,28 +476,33 @@ export default {
 
       // Origins call req_steam (Chemins configurer avec Steam ou tu installes tes jeux)
       origins = await electron.ipcRenderer.sendSync('req_steam')
-
+      
       // Boucles logiques
       origins.forEach(FoldersPath => {
-        const res = electron.ipcRenderer.sendSync('req_folderContents', FoldersPath.id)
-        const resParse = res
-        console.log(res)
+        const res = electron.ipcRenderer.sendSync('req_folderContents', FoldersPath.nodeKey)
+        const resParse = JSON.parse(res)
         const newContents = resParse.contents
+        
+        
+
         resultPath_.push(newContents)
         this.loadMessage = 'Recherche des racines Steam'
         
-
         // check les perfs
         if (resultPath_.length >= 2) {
           acfFiles = [].concat.apply([], resultPath_).filter(word => word.nodeKey.includes('.acf'))
         }
       })
 
+      
+
       // Only ACF Files
       acfFiles.forEach(read => {
         const parsedACF = this.AppManifestParser(read.nodeKey)
         appIds_.push(parsedACF)
       })
+
+      
 
       // Parcours les ID et les maps en item utilisable
       appIds_.forEach(res => {
@@ -503,6 +515,8 @@ export default {
           console.log(resObj)
           results.push(resObj)
         })
+
+
 
         setTimeout(() => {
           timer = setInterval(() => {
@@ -589,6 +603,18 @@ export default {
       this.$store.dispatch('GAME_LIST', allItems)
       this.$store.dispatch('GAME_KEYS', allKeys)
       this.gamesLoaded = true
+      this.getGameList()
+      const data = JSON.stringify( this.gameListed)
+      await electron.ipcRenderer.send('myGameList', data) 
+    },
+    getGameList() {
+      this.$store.state.gameList.forEach(item => {
+        if(this.gameListed.includes(item.label)) {
+          return
+        } else {
+          this.gameListed.push(item.label + '.exe')
+        }
+      }) 
     },
     // Return un ACF file parsé
     isNumeric (n) {

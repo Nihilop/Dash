@@ -133,6 +133,7 @@ export default {
       this.$store.dispatch('FOLDERS', resObj.folders)
       this.category = resObj
       this.initFolder()
+      
     },
     closeAndGo () {
       if (this.rootdir !== 0) {

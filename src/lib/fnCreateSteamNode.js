@@ -3,14 +3,6 @@ const mime = require('mime-types')
 
 function fnCreateSteamNode (fileInfo) {
   let nodeKey = fileInfo.rootDir
-  if (nodeKey.charAt(nodeKey.length - 1) !== path.sep) {
-    nodeKey += path.sep
-  }
-  if (fileInfo.fileName === path.sep) {
-    fileInfo.fileName = nodeKey
-  } else {
-    nodeKey += fileInfo.fileName
-  }
   // get file mime type
   const mimeType = mime.lookup(nodeKey)
   // create object
