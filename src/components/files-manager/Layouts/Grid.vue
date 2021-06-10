@@ -418,7 +418,6 @@ $accept : #27ae60;
     width: 22%;
     height: calc(#{$heightCard} + 34px);
     margin: 25px 15px;
-    color: white;
     font-weight: bold;
     font-size: 3em;
     border-radius: 5px;
@@ -475,8 +474,7 @@ $accept : #27ae60;
       h3 {
         padding: 0 10px;
         font-size:0.2em;
-
-        color: rgba(255,255,255,.8);
+        opacity: 0.8;
         font-weight: bold;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -526,7 +524,6 @@ $accept : #27ae60;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    color: white;
     display: flex;
     vertical-align: middle;
     font-size:0.3em;
@@ -555,7 +552,7 @@ $accept : #27ae60;
 }
 .breadcrumbs {
   font-size: 2em;
-  color: rgba(white, 30%);
+  opacity: 0.3;
   font-weight: 800;
   margin-left: 24px;
 }
@@ -578,13 +575,13 @@ $accept : #27ae60;
   background:none;
   border: none;
   outline: none;
-  color: rgba(255,255,255,0.2);
+  opacity: 0.2;
   margin: auto 0px auto 10px;
   font-size: 1.5em;
   cursor: pointer;
   user-select: none;
   &:hover {
-    color:white;
+    opacity: 1;
   }
 }
 .NoResults {
@@ -593,7 +590,6 @@ $accept : #27ae60;
   display: flex;
   vertical-align: middle;
   justify-content: center;
-  color:white;
   div {
     margin: auto;
     h1 {

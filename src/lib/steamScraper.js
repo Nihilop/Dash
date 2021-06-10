@@ -29,6 +29,8 @@ function getData (appId, cb) {
           tags: []
         }
 
+        obj.url = url + appId
+
         $('.game_area_details_specs .name').each(function () {
           obj.categories.push($(this).text())
         })

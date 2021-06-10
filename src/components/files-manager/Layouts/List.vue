@@ -420,7 +420,7 @@ $accept : #27ae60;
       vertical-align: middle;
       text-align: left;
       height: 100%;
-      color: rgba(white, 20%);
+      opacity: 0.2;
       th {
         display: block;
         margin:auto;
@@ -452,7 +452,6 @@ $accept : #27ae60;
     width: 100%;
     display: flex;
     justify-content: left;
-    color:white;
     transition: all 0.2s;
     overflow: hidden;
     &:hover {
@@ -483,7 +482,7 @@ $accept : #27ae60;
       width:10%;
       box-sizing: border-box;
       text-align: center;
-      color:rgba(white, 20%);
+      opacity: 0.3;
       display:flex;
       margin: auto;
       > p {
@@ -516,7 +515,7 @@ $accept : #27ae60;
 }
 .breadcrumbs {
   font-size: 2em;
-  color: rgba(white, 30%);
+  opacity: 0.3;
   font-weight: 800;
   margin-left: 24px;
 }
@@ -524,13 +523,13 @@ $accept : #27ae60;
   background:none;
   border: none;
   outline: none;
-  color: rgba(255,255,255,0.2);
+  opacity: 0.2;
   margin: auto 0px auto 10px;
   font-size: 1.5em;
   cursor: pointer;
   user-select: none;
   &:hover {
-    color:white;
+    opacity: 1;
   }
 }
 .NoResults {
@@ -539,7 +538,6 @@ $accept : #27ae60;
   display: flex;
   vertical-align: middle;
   justify-content: center;
-  color:white;
   div {
     margin: auto;
     h1 {

@@ -1,26 +1,23 @@
 'use strict'
-import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow, nativeImage } from 'electron'
+import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow, nativeImage, ipcRenderer } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import * as os from 'os'
 import IpcRegister from './api/IpcRegister'
-import fs from 'fs'
 import path from 'path'
-import DiscordRPC from 'discord-rpc'
+import { DiscordHandler } from './utils/discord'
 import settings from 'electron-settings';
+import {sendStatusToWindow, sendSpeedDownload, sendPercentageDownload} from './utils/updateSender'
 const unhandled = require('electron-unhandled');
-const { ProcessListen, getWindows } = require('active-window-listener')
 const log = require('electron-log')
-const { setVibrancy } = require('electron-acrylic-window')
+//const { setVibrancy } = require('electron-acrylic-window')
+const acrylicWindow = require('electron-acrylic-window').BrowserWindow
 const { autoUpdater } = require('electron-updater')
-
 
 log.transports.console.useStyles = true
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const isWindows10 = process.platform === 'win32' && os.release().split('.')[0] === '10'
-protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { secure: true, standard: true } }
-])
+protocol.registerSchemesAsPrivileged([ { scheme: 'app', privileges: { secure: true, standard: true } } ])
 
 const singleInstance = app.requestSingleInstanceLock()
 let win: BrowserWindow
@@ -28,24 +25,51 @@ let winSettings: BrowserWindow
 let splash: BrowserWindow
 let tray
 const iconTray = nativeImage.createFromPath(path.join(__dirname, '/img/tray.png'))
-let vibrancyOp
+let theme
 let userStatus = 'online'
 let iconStatus
+iconStatus = {
+  online: path.join(__dirname, '/img/status/online.png'),
+  busy: path.join(__dirname, '/img/status/busy.png'),
+  afk: path.join(__dirname, '/img/status/afk.png'),
+  offline: path.join(__dirname, '/img/status/offline.png')
+}
+
 init()
 
 async function init() {
+  settings.configure({prettify: true});
+  
   if(settings.file()) {
-    log.warn('Tout semble être ok')
+    log.warn(`%cRacine des options: %c${settings.file()} / OK`,'color: green', 'color:magenta')
+    // await settings.set('parameters', {
+    //   name: 'NA',
+    //   trigger: 'CTRL+G',
+    //   autostart: true,
+    //   userStatus: 'Online',
+    //   customStatus: "Je suis une licorne !",
+    //   refreshStatusTime: { time: 5e3, value: "5s, Ok normal" },
+    //   theme_selected: 'dark',
+    //   boxed: false
+    // });
   } else {
     await settings.set('parameters', {
       name: 'NA',
-      trigger: 'CTRL+G',
-      autostart: true
+      trigger: 'Ctrl+G',
+      autostart: true,
+      userStatus: 'Online',
+      customStatus: "Je suis une licorne !",
+      refreshStatusTime: { time: 5e3, value: "5s, Ok normal" },
+      theme_selected: 'dark',
+      boxed: true
     });
   }
-  log.error(settings.file())
 }
 
+// acrylic / blur
+
+// ------------------------------------------------------
+// à delete soon soon
 if (isDevelopment) {
   unhandled();
   iconStatus = {
@@ -54,33 +78,17 @@ if (isDevelopment) {
     afk: path.join(__dirname, '../public/img/status/afk.png'),
     offline: path.join(__dirname, '../public/img/status/offline.png')
   }
-} else {
-  iconStatus = {
-    online: path.join(__dirname, '/img/status/online.png'),
-    busy: path.join(__dirname, '/img/status/busy.png'),
-    afk: path.join(__dirname, '/img/status/afk.png'),
-    offline: path.join(__dirname, '/img/status/offline.png')
-  }
-}
+} 
+// ------------------------------------------------------
 
-function sendStatusToWindow (text) {
-  log.info(text)
-  splash.webContents.send('message', text)
-}
-function sendSpeedDownload (text) {
-  log.info(text)
-  splash.webContents.send('speed', text)
-}
-function sendPercentageDownload (text) {
-  log.info(text)
-  splash.webContents.send('percentage', text)
-}
+
 
 function createSplashWindow () {
   splash = new BrowserWindow({
     width: 350,
     height: 500,
     frame: false,
+    hasShadow: true,
     transparent: true,
     resizable: false,
     webPreferences: {
@@ -95,13 +103,31 @@ function createSplashWindow () {
   splash.focus()
   ipcMain.on('cancelUpdate', () => {
     splash.close()
-    createWindow()
+    createTray()
   })
   ipcMain.on('app_version', (event) => {
     event.sender.send('app_version', { version: app.getVersion() })
   })
 
   return splash
+}
+function createTray() {
+  createWindow()
+  tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'En ligne', click () { userStatus = 'online' }, icon: iconStatus.online },
+    { label: 'Ne pas déranger', click () { userStatus = 'busy' }, icon: iconStatus.busy },
+    { label: 'Inactif', click () { userStatus = 'afk' }, icon: iconStatus.afk },
+    { label: 'Hors ligne', click () { userStatus = 'offline' }, icon: iconStatus.offline },
+    { type: 'separator' },
+    { label: "Ouvrir l'application", click () { win.show() } },
+    { label: 'Options', click () { createWindowSettings() } },
+    { label: 'Quitter', click () { app.quit() } }
+  ])
+  tray.on('double-click', function () {
+    win.show()
+  })
+  tray.setContextMenu(contextMenu)
 }
 function createWindowSettings () {
   const settingsPath = process.env.NODE_ENV === 'development' ? 'http://localhost:8080/#settings' : `file://${__dirname}/index.html#settings`
@@ -124,6 +150,10 @@ function createWindowSettings () {
   ipcMain.on('closeSettings', () => {
     console.log('close clicked')
     winSettings.close()
+  })
+  ipcMain.on('saveSettings', () => {
+    console.log('save clicked')
+    winSettings.close()
     setAutoStart()
     createShortcut()
     //app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) }) 
@@ -134,30 +164,46 @@ function createWindowSettings () {
 }
 async function createWindow () {
   // Create the browser window.
+  
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
+  const themeSelected = await settings.get('parameters.theme_selected')
+  const getBoxed = await settings.get('parameters.boxed')
+  log.warn('Le theme est: ' + themeSelected)
 
-  if (isWindows10) {
-    vibrancyOp = {
-      theme: '#8034495E',
-      effect: 'acrylic',
-      useCustomWindowRefreshMethod: false,
-      disableOnBlur: true,
-      debug: false
+  if(isWindows10) {
+    if(themeSelected === 'dark') {
+      theme = {
+        theme: '#202425E6',
+        effect: 'acrylic',
+        useCustomWindowRefreshMethod: true,
+        disableOnBlur: true,
+        debug: true 
+      }
+    } else {
+      theme = {
+        theme: '#EEEEEE44',
+        effect: 'acrylic',
+        useCustomWindowRefreshMethod: true,
+        disableOnBlur: true,
+        debug: true 
+      }
     }
-  } else vibrancyOp = 'dark'
+  } else {
+    theme = 'light'
+  }
 
-  win = new BrowserWindow({
-    width,
-    height,
-    transparent: true,
+  win = new acrylicWindow({
     frame: false,
-    hasShadow: false,
+    hasShadow: true,
     show: false,
     alwaysOnTop: true,
-    fullscreen: true,
+    fullscreen: getBoxed ? false : true,
+    transparent: getBoxed ? false : true,
     useContentSize: true,
     skipTaskbar: true,
     resizable: false,
+    thickFrame: false,
+    vibrancy:theme,
     webPreferences: {
       nodeIntegration: (process.env
         .ELECTRON_NODE_INTEGRATION as unknown) as boolean,
@@ -166,20 +212,64 @@ async function createWindow () {
       contextIsolation: false,
     }
   })
-  setVibrancy(win, vibrancyOp)
+
+
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
     if (!process.env.IS_TEST) win.webContents.openDevTools({ mode: 'detach' })
   } else {
     // Load the index.html when not in development
-    
     win.loadURL('app://./index.html')
   }
 
   setAutoStart()
   createShortcut()
+
+  // Ajouter des conditions d'ouverture pour prevent les bug sur l'axe X ?
+  if(getBoxed) {
+    win.setBounds({width: width / 1.2, height: height - 200 })
+    const winSize = win.getSize()
+    let calculSpace = Math.round(width - winSize[0])  / 2
+    
+    win.setPosition(calculSpace, +winSize[1] - 100)
   
+    win.on('hide', () => {
+      setTimeout(() => {
+        win.setPosition(calculSpace, +winSize[1] - 100)
+      },200)
+      
+    })
+    win.on('show', () => {
+      const winSize = win.getSize()
+      const winPos = win.getPosition()
+      log.warn(winSize, winPos)
+      animate(winPos[1], 190, (offsetY) => {
+        win.setPosition(winPos[0], offsetY)
+      })
+    })
+  } else {
+    const winSize = win.getSize()
+    win.setPosition(0, -winSize[1] + (winSize[1] - 200))
+  
+    win.on('hide', () => {
+      setTimeout(() => {
+        win.setPosition(0, -winSize[1] + (winSize[1] - 200))
+      },200)
+      
+    })
+    win.on('show', () => {
+      const winSize = win.getSize()
+      const winPos = win.getPosition()
+      log.warn(winSize, winPos)
+      animate(winPos[1], 0, (offsetY) => {
+        win.setPosition(winPos[0], offsetY)
+      })
+    })
+
+  }
+  
+
   win.on('blur', () => {
     win.hide()
   })
@@ -192,8 +282,35 @@ async function createWindow () {
   ipcMain.on('openLauncherWhenSelected', () => {
     win.show()
   })
-  
+
   return win
+}
+
+function animate (start, end, fn) {
+  // console.time('animate')
+  return new Promise((resolve, reject) => {
+    let timer 
+    let offset = end - start
+    let t = 0
+    let maxT = 500 / 10
+    timer = setInterval(() => {
+      t++
+      if (t >= maxT) {
+        clearInterval(timer)
+        resolve(timer)
+      }
+      let offsetY = parseInt(cubicEaseOut(t, start, offset, maxT))
+      /* eslint-disable no-compare-neg-zero */
+      if (offsetY === -0) {
+        offsetY = 0
+      }
+      fn && fn(offsetY)
+    }, 10)
+  })
+}
+
+function cubicEaseOut (t, b, c, d) {
+  return -c * ((t = t / d - 1) * t * t * t - 1) + b
 }
 
 
@@ -214,7 +331,10 @@ async function createShortcut () {
   console.log(shortcut)
   globalShortcut.register(JSON.parse(JSON.stringify(shortcut)), () => {
     if (win.isVisible()) {
+      
       win.hide()
+      
+      
       console.log('pressed and hide')
     } else {
       win.show()
@@ -231,74 +351,54 @@ if (!singleInstance) {
     win.show()
     win.focus()
   })
-
   // Create windows, load the rest of the app, etc...
   app.whenReady().then(() => {
     createSplashWindow()
-    
-    connectDiscord()
+    new DiscordHandler()
+    //ipcRenderer.send('appVersion', app.getVersion())
     const ipcRegister = new IpcRegister(ipcMain)
     ipcRegister.registerOn()
 
-    tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
-    const contextMenu = Menu.buildFromTemplate([
-      { label: 'En ligne', click () { userStatus = 'online' }, icon: iconStatus.online },
-      { label: 'Ne pas déranger', click () { userStatus = 'busy' }, icon: iconStatus.busy },
-      { label: 'Inactif', click () { userStatus = 'afk' }, icon: iconStatus.afk },
-      { label: 'Hors ligne', click () { userStatus = 'offline' }, icon: iconStatus.offline },
-      { type: 'separator' },
-      { label: "Ouvrir l'application", click () { win.show() } },
-      { label: 'Options', click () { createWindowSettings() } },
-      { label: 'Quitter', click () { app.quit() } }
-    ])
-    tray.on('double-click', function () {
-      win.show()
-    })
-    tray.setContextMenu(contextMenu)
+    
   }).then(() => {
     if (splash.isVisible()) {
       setTimeout(() => {
-        if(isDevelopment){
-          autoUpdater.checkForUpdates()
-        } else {
-          autoUpdater.checkForUpdatesAndNotify()
-        }
+        // Check la différence entre checkForUpdates & AndNotify (Apparemment, AndNotify throw a notification windows)
+        if(isDevelopment){ autoUpdater.checkForUpdates() } 
+        else { autoUpdater.checkForUpdatesAndNotify() }
       }, 3000)
-
       autoUpdater.on('checking-for-update', () => {
-        sendStatusToWindow('Chargement...')
+        sendStatusToWindow(splash, 'Chargement...')
       }).on('update-available', (info) => {
-        
-        sendStatusToWindow('Mise à jour trouvée.')
+        sendStatusToWindow(splash, 'Mise à jour trouvée.')
         setTimeout(() => {
-          sendStatusToWindow('Analyse des données.')
+          sendStatusToWindow(splash, 'Analyse des données.')
           splash.webContents.send('updateFound', true)
         }, 1000)
       }).on('update-not-available', (info) => {
-        sendStatusToWindow('Préparez-vous au lancement !')
-        createWindow()
-        
+        sendStatusToWindow(splash, 'Préparez-vous au lancement !')
+        createTray()
         setTimeout(() => {
           splash.close()
         }, 1000)
       }).on('error', (err) => {
-        sendStatusToWindow(err)
+        sendStatusToWindow(splash, err)
         splash.webContents.send('UpdaterError', true)
-        // setTimeout(() => {
-        //   splash.close()
-        // }, 2000)
       }).on('download-progress', (progressObj) => {
+        // Debug - show in console (Electron) the progression
         let log_message = 'Download speed: ' + progressObj.bytesPerSecond
         log_message = log_message + ' - Downloaded ' + progressObj.percent + '%'
         log_message = log_message + ' (' + progressObj.transferred + '/' + progressObj.total + ')'
-        sendStatusToWindow('Téléchargement en cours...')
-        sendSpeedDownload(progressObj.bytesPerSecond)
-        sendPercentageDownload(progressObj.percent)
+        log.warn(log_message)
+
+        sendStatusToWindow(splash, 'Téléchargement en cours...')
+        sendSpeedDownload(splash, progressObj.bytesPerSecond)
+        sendPercentageDownload(splash, progressObj.percent)
       }).on('update-downloaded', (info) => {
         console.log('Téléchargement terminé')
-        sendStatusToWindow('Téléchargement terminé')
+        sendStatusToWindow(splash, 'Téléchargement terminé')
         setTimeout(() => {
-          sendStatusToWindow("L'application redémarrera tout seul.")
+          sendStatusToWindow(splash, "L'application redémarrera tout seul.")
           setTimeout(() => {
             autoUpdater.quitAndInstall(true, true)
           }, 2000)
@@ -312,7 +412,6 @@ if (!singleInstance) {
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  disconnectDiscord()
   if (process.platform !== 'darwin') {
     app.quit()
   }
@@ -349,139 +448,4 @@ if (isDevelopment) {
   }
 }
 
-
-
-// Set this to your Client ID.
-
-const clientId = '847459425585201182'
-const scopes = ['rpc']
-let discordTimer
-let discordConnextionTimer
-let rpc = null
-let gameName_
-let tryToConnect = 0
-DiscordRPC.register(clientId)
-
-function connectDiscord () {
-  if (!rpc || rpc === null) rpc = new DiscordRPC.Client({ transport: 'ipc' })
-  rpc.login({ clientId }).catch((error: string) => {
-    console.error(error)
-    console.debug('[RPC] Error: Make sure Discord client is available and you are connected to the Internet')
-    rpc = null
-    if (tryToConnect <= 5) {
-      clearInterval(discordConnextionTimer)
-    }
-    discordConnextionTimer = setInterval(() => {
-      tryToConnect++
-      connectDiscord()
-    }, 15e3)
-  })
-  rpc.on('ready', () => {
-    console.debug('Discord Client ready')
-    clearInterval(discordConnextionTimer)
-    setActivity()
-    discordTimer = setInterval(() => {
-      setActivity().catch((e: string) => console.error(`Failed to update Discord status. ${e}`))
-    }, 5e3)
-  })
-}
-
-function disconnectDiscord () {
-  rpc.clearActivity()
-  clearInterval(discordTimer)
-  rpc.destroy()
-  rpc = null
-}
-
-// Get current window active
-let gameList_
-let Statusdatas
-let processID;
-
-ipcMain.on('myGameList', (event, arg) => {
-  gameList_ = arg
-  const listener = new ProcessListen(JSON.parse(gameList_))
-  log.error(listener)
-  listener.changed(data => {
-    console.log("Active: ", data)
-    return processID = data
-  })
-})
-  
-
-async function updateStatusMessage () {
-
-  //log.warn(processID)
-  let appStatus = 'none'
-  if (userStatus === 'online') {
-    appStatus = 'playing'
-  } else if (userStatus === 'busy') {
-    appStatus = 'playingbusy'
-  } else if (userStatus === 'afk') {
-    appStatus = 'playingafk'
-  } else {
-    appStatus = 'none'
-  }
-  
-
-    
-
-
-  log.info(`%c${processID}`,'color: green')
-
-  if(processID && processID.path.includes(gameName_)) {
-    const getLastItem = thePath => thePath.substring(thePath.lastIndexOf('\\') + 1)
-    const name = getLastItem(processID.path)
-    let GName = name.substring(0, name.length - 4);
-    
-    Statusdatas = { play : appStatus, message : `Joue à : ${GName}`, game: true}
-  } else if(win.isVisible()) {
-    Statusdatas = { play : "idle", message : "Ah, il veut jouer ?", game: false}
-  } else if (processID && processID.path.includes("Code.exe")) {
-    Statusdatas = { play : "coding", message : "Entrain de coder, bruh", game: false}
-  } else {
-    Statusdatas = { play : "none", message : `Joue a la Licorne`, game: false}
-  }
-
-
-
-
-  return Statusdatas
-}
-
-let startTimestamp
-
-ipcMain.on('game_launch', function (event, data) {
-  console.log('Game ' + data + ' launched')
-  startTimestamp = new Date();
-  gameName_ = data
-  updateStatusMessage()
-})
-
-async function setActivity () {
-  if (!rpc || !win || rpc === null) {
-    return
-  }
-  const StatusLol = await updateStatusMessage()
-  log.error(StatusLol)
-  if(StatusLol.game) {
-    log.warn(startTimestamp)
-    rpc.setActivity({
-      details: StatusLol.message,
-      startTimestamp,
-      largeImageKey: 'dashou',
-      largeImageText: 'Dash - Launcher',
-      smallImageKey: StatusLol.play,
-      instance: false
-    })
-  } else {
-    rpc.setActivity({
-      details: StatusLol.message,
-      largeImageKey: 'dashou',
-      largeImageText: 'Dash - Launcher',
-      smallImageKey: StatusLol.play,
-      instance: false
-    })
-  }
-
-}
+export { win, userStatus }

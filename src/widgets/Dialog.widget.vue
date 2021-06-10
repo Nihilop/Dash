@@ -244,6 +244,8 @@ export default defineComponent({
     padding: 16px 24px;
     font-size: 18px;
     overflow: auto;
+    box-sizing: border-box;
+    height: fit-content;
     color: #a5c1cc;
   }
 

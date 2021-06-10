@@ -236,7 +236,6 @@ export default defineComponent({
   label {
     display: flex;
     font-weight: 200;
-    color: rgba(white, 100%);
     padding: 15px 0;
     cursor:default;
     text-transform: uppercase;
@@ -281,8 +280,7 @@ export default defineComponent({
     text-align: left;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-    color: $white;}
+    white-space: nowrap;}
 }
 .v-contextmenu-item {
   padding: 5px 15px;

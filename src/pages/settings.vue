@@ -11,7 +11,6 @@
     </header>
     <section class="contents scrollable">
       <form>
-        {{ $router.path }}
         <h1>Configuration de l'utilisateur</h1>
         <div class="group">
           <input
@@ -26,6 +25,49 @@
             :class="nickname != '' ? 'notEmpty' : null"
           >Nom d'utilisateur</label>
         </div>
+        <h1>Discord Rich presence</h1>
+        <div class="group">
+        <input
+            v-model="playingGame"
+            class="inputed"
+            name="play"
+            type="checkbox"
+          >
+          <label
+            class="labeler"
+            for="play"
+          >Montrer le jeu que tu joues ? </label>
+        </div>
+
+        <p style="padding-bottom:0px ">L'actualisation du statut peut prendre un certain delais que je compte réduire à l'avenir, merci de votre compréhension</p>
+        
+
+        <div class="group">
+          <input
+            v-model="customStatus"
+            class="inputed"
+            name="one"
+            type="text"
+          >
+          <label
+            class="labeler"
+            for="one"
+            :class="customStatus != '' ? 'notEmpty' : null"
+          >Définir un statut personnalisé, Ex : Je suis une licorne !</label>
+        </div>
+        <!-- <span>Timer actualisation du statut discord</span>
+        <select
+          v-model="refreshStatusTime"
+          name="refreshStatusVal"
+        >
+          <option
+            v-for="stc in refreshStatusVal"
+            :key="stc.id"
+            v-bind:value="{ time: stc.time, value: stc.value }"
+          >
+            {{ stc.value }}
+          </option>
+        </select> -->
         <h1>Configuration de l'application</h1>
         <div class="group">
           <input
@@ -39,6 +81,19 @@
             for="two"
           >Démarrer l'application à l'ouverture de windows ? </label>
         </div>
+        <span>Theme</span>
+        <select
+          v-model="theme"
+          name="refreshStatusVal"
+        >
+          <option
+            v-for="thm in themes"
+            :key="thm.id"
+            :value="thm"
+          >
+            {{ thm }}
+          </option>
+        </select>
         <span>Raccourcis clavier</span>
         <select
           v-model="shortcut"
@@ -81,8 +136,18 @@ export default {
     return {
       nickname: '',
       startup: false,
+      playingGame: true,
       shortcut: '',
-      shortcuts: ['Ctrl+G', 'Ctrl+H']
+      shortcuts: ['Ctrl+G', 'Ctrl+H'],
+      customStatus: '',
+      refreshStatusTime: { time: null, value: "" },
+      refreshStatusVal: [
+        { time: 4e3, value: "4s, wow t'es un ouf" },
+        { time: 5e3, value: "5s, Ok normal" },
+        { time: 10e3, value: "10s, Toi, t'es pas pressé.." },
+      ],
+      themes: ['dark', 'light'],
+      theme: '',
     }
   },
   mounted () {
@@ -93,17 +158,28 @@ export default {
       this.nickname = await settings.get('parameters.name');
       this.shortcut = await settings.get('parameters.trigger');
       this.startup = await settings.get('parameters.autostart');
+      this.customStatus = await settings.get('parameters.customStatus');
+      this.refreshStatusTime = await settings.get('parameters.refreshStatusTime')
+      this.theme = await settings.get('parameters.theme_selected')
+      this.playingGame = await settings.get('parameters.showPlaying')
+      console.log(this.playingGame)
     },
     async save () {
-      await settings.set('parameters', {
-        name: this.nickname,
-        trigger: this.shortcut,
-        autostart: this.startup
-      });
-      electron.ipcRenderer.sendSync('closeSettings', true)
+      settings.configure({prettify: true});
+      
+      await settings.set('parameters.name', this.nickname);
+      await settings.set('parameters.trigger', this.shortcut);
+      await settings.set('parameters.autostart', this.startup);
+      await settings.set('parameters.customStatus', this.customStatus);
+      //await settings.set('parameters.refreshStatusTime', this.refreshStatusTime);
+      await settings.set('parameters.theme_selected', this.theme); 
+      await settings.set('parameters.showPlaying', this.playingGame); 
+
+      electron.ipcRenderer.send('themeChanged', this.theme === 'dark' ? true : false)
+      electron.ipcRenderer.send('saveSettings')
     },
     closeApp () {
-      electron.ipcRenderer.sendSync('closeSettings', true)
+      electron.ipcRenderer.send('closeSettings')
     }
   }
 }
@@ -171,7 +247,7 @@ header.winbar {
 
 .group {
   position: relative;
-  margin-bottom: 45px;
+  margin: 45px auto;
   height: fit-content;
 }
 
@@ -257,9 +333,13 @@ input[type=text].inputed {
     padding: 24px 10px;
     font-size: 1.5em;
     font-weight: 200;
-    margin-bottom: 50px;
+    margin-bottom: 20px;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.4);
+  }
+  p {
+    color: rgba(white, 10%);
+    font-size: 13px;
   }
 }
 
@@ -271,13 +351,14 @@ input[type=text].inputed {
   height: 55px;
   justify-content: center;
   vertical-align: center;
+  pointer-events: none;
 
   button.btn {
     width: 150px;
     height: 40px;
     border: none;
     outline: none;
-
+    pointer-events:visible;
     font-size: 13px;
     letter-spacing: 2px;
     text-transform: uppercase;

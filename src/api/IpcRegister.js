@@ -157,12 +157,15 @@ class IpcRegister {
     let newFiles = []
     for (const fileInfo of fnWalkFolders(folder, 0)) {
       if ('error' in fileInfo) {
-        // console.error(`Error: ${fileInfo.rootDir} - ${fileInfo.error}`)
+        console.error(`Error: ${fileInfo.rootDir} - ${fileInfo.error}`)
         continue
       }
       const node = fnCreateBnetNode(fileInfo)
+      console.log(node)
+      if(node === undefined) continue
       if (node.data.isDir) newFolders.push(node)
       if (!node.data.isDir) newFiles.push(node)
+      
     }
     newFolders = _.orderBy(newFolders, ['label'], ['asc'])
     newFiles = _.orderBy(newFiles, ['label'], ['asc'])

@@ -11,6 +11,11 @@ function fnCreateSteamNode (fileInfo) {
     appid: fileInfo.appID,
     origin: fileInfo.origine,
     game: fileInfo.meta,
+    analytic: {
+      played: 0,
+      stat: [],
+      launched: 0
+    },
     name: fileInfo.fileName,
     label: fileInfo.fileName,
     nodeKey: nodeKey,
@@ -21,6 +26,7 @@ function fnCreateSteamNode (fileInfo) {
     data: {
       rootDir: fileInfo.rootDir,
       isDir: fileInfo.isDir,
+      process: fileInfo.process,
       mimeType: mimeType,
       stat: fileInfo.stat
     }
