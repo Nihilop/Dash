@@ -1,149 +1,240 @@
 <template>
   <div>
     <div v-hotkey="keymap">
-      <div class="microNav">
-        <button
-          class="addGames"
-          @click="manualAdd = !manualAdd"
-        >
-          <i class="bi bi-plus" />
-        </button>
-        <button
-          class="refreshGames"
-          @click="refreshGames"
-        >
-          <i class="bi bi-arrow-counterclockwise" />
-        </button>
+      <div class="material theme-dark" :class="panels.microNav ? 'active':null" >
+        <ul>
+          <li @click="panels.manualAdd = !panels.manualAdd">
+            <span class="iconMico"><i class="bi bi-plus" /> </span>
+            <span>Ajouter un jeu</span>
+          </li>
+          <li @click="refreshGames">
+            <span class="iconMico"><i class="bi bi-arrow-counterclockwise" /> </span>
+            <span>Actualiser la liste des jeux</span>
+          </li>
+          <li v-if="$store.state.gameList.length > 0" @click="panels.dbCleanModal = !panels.dbCleanModal">
+            <span class="iconMico"><i class="bi bi-trash" /> </span>
+            <span>Supprimer la base de donnée</span>
+          </li>
+          <li @click="panels.headShow = !panels.headShow">
+            <span style="width:100%">Afficher la recherche : {{panels.headShow}}</span>
+          </li>
+          <!-- <li @click="panels.stats_overview = !panels.stats_overview">
+            <span class="iconMico"><i class="bi bi-bar-chart-fill"></i></span>
+            <span>Statistiques</span>
+          </li> -->
+          
+        </ul>
       </div>
-      <header class="searchAndFilter">
-        <div class="formGroup">
-          <i class="bi bi-search" />
-          <input
-            v-model="SearchGame"
-            type="search"
-            placeholder="Chercher un jeu..."
-          >
-        </div>
-        <div class="tags">
-          <ul>
-            <li
-              v-for="cat in category"
-              :key="cat.id"
-              :class="SelectedCat === cat.tag ? 'active' : null"
-              @click="setCat(cat.tag)"
-            >
-              <img v-if="cat.icon" :src="cat.icon" />
-              <p v-else>{{ cat.name }}</p>
-            </li>
-          </ul>
-        </div>
-      </header>
-      <div
-        v-if="gamesLoaded"
-        class="games_container"
-      >
-        <transition-group
-          tag="main"
-          name="card"
-        >
-          <article
-            v-for="(game, index) in filterComponents"
-            :key="index"
-            v-contextmenu:[game.name]
-            class="card"
-            
-          >
-            <div class="image" >
-              <!-- <img v-if="image['#text'] !== ''" :src="image['#text']" :alt="album.name" v-on:load="isLoaded()" v-bind:class="{ active: isActive }"> -->
-              <img
-                v-if="game.game"
-                :src="game.game.cover"
-                :alt="game.name"
-                :class="{ active: isActive }"
-                @load="isLoaded()"
-                @click="game.origin === 'bnet' ? openBnetGame(game) : openSteamGame(game)"
-              >
-              <img
-                v-else
-                src="/img/bg2.jpg"
-                :alt="game.name"
-                :class="{ active: isActive }"
-                @load="isLoaded()"
-                @click="launchApp(game.nodeKey)"
-              >
-              <i v-if="game.origin === 'steam' || game.origin === 'bnet'" @click.prevent="game.origin === 'steam' || 'bnet' ? openDetail(game) : null" class="detailsBtn bi bi-info" />
-              <div
-                v-if="game.origin === 'local'"
-                class="iconApp"
-                
-              >
-                <Promised
-                  v-if="game.data.mimeType == 'application/x-ms-shortcut'"
-                  :promise="$getIco(game.nodeKey)"
-                >
-                  <template #default="data">
-                    <img
-                      class="iconCover"
-                      :src="data"
-                      :class="{ active: isActive }"
-                      @load="isLoaded()"
-                    >
-                  </template>
-                </Promised>
-                <Promised
-                  v-else-if="game.data.mimeType === 'application/x-msdos-program'"
-                  :promise="$getExeIcon(game.nodeKey)"
-                >
-                  <template #default="data">
-                    <img
-                      class="iconCover"
-                      :src="data"
-                      :class="{ active: isActive }"
-                      @load="isLoaded()"
-                    >
-                  </template>
-                </Promised>
-              </div>
-            </div>
-            <div
-              class="description"
-            >
-              <h3 class="title">
-                {{ game.name }}
-              </h3>
-              <p class="origin">
-                
-                <img class="launcherIcon" v-if="game.origin === 'steam' || 'bnet'" :src="'/img/ico/' + game.origin + '.png'" />
-                <span v-else>{{ game.origin ? game.origin : 'External' }}</span>
-              </p>
-            </div>
-            <v-contextmenu :ref="game.name">
-              <v-contextmenu-item
-                class="rightClickDelete"
-                @click="removeToLauncher(game)"
-              >
-                <i
-                  class="bi bi-trash"
-                  style="margin-right:5px"
-                />Supprimer
-              </v-contextmenu-item>
-            </v-contextmenu>
-          </article>
-          <h1
-            v-if="filterComponents.length <= 0"
-            key="noRst"
-            class="noResults"
-          >
-            Aucun résultat(s) trouvé(s)
-          </h1>
-        </transition-group>
+      <div class="icon">
+        <a @click="panels.microNav = !panels.microNav" v-clickoutside="closemicroNav">
+          <i class="bi bi-gear-fill"></i>
+        </a>
       </div>
+      <main class="launcher">
+        <header class="searchAndFilter" :class="panels.headShow ? null : 'headHidden'">
+          <div class="formGroup">
+            <i class="searchIcon bi bi-search" />
+            <input
+              v-model="SearchGame"
+              type="search"
+              placeholder="Chercher un jeu..."
+            >
+            <i class="filterIcon bi bi-filter" @click="panels.filterShow = !panels.filterShow" />
+
+            <div class="tags" :class="panels.filterShow || !panels.headShow ? 'actived':null" :style="!panels.headShow ? 'top: 140% !important;':null">
+              <ul>
+                <li
+                  v-for="cat in category"
+                  :key="cat.id"
+                  :class="SelectedCat === cat.tag ? 'active' : null"
+                  @click="setCat(cat.tag)"
+                >
+                  <img v-if="cat.icon" :src="cat.icon" />
+                  <p v-else>{{ cat.name }}</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          
+          
+        </header>
+        <div
+          v-if="gamesLoaded"
+          class="games_container"
+        >
+        <section class="viewport">
+          <div class="recent" v-if="recentPlayed.length > 0">
+            <h1 class="row_title firstTitle" @click="panels.recent = !panels.recent">Most played <span>#{{recentPlayed.length}}</span></h1>
+            <transition-group tag="main" name="card" v-show="panels.recent">
+              <article v-for="(game, index) in recentPlayed.slice(0, 5)" :key="index" v-contextmenu:[game.nodeKey] class="card" >
+                <div class="image" >
+                  <!-- <img v-if="image['#text'] !== ''" :src="image['#text']" :alt="album.name" v-on:load="isLoaded()" v-bind:class="{ active: isActive }"> -->
+                  <img
+                    v-if="game.game"
+                    :src="game.game.cover"
+                    :alt="game.name"
+                    :class="{ active: isActive }"
+                    @load="isLoaded()"
+                    @click="game.origin === 'bnet' ? openBnetGame(game) : openSteamGame(game)"
+                  >
+                  <img
+                    v-else
+                    src="/img/bg2.jpg"
+                    :alt="game.name"
+                    :class="{ active: isActive }"
+                    @load="isLoaded()"
+                    @click="launchApp(game.nodeKey)"
+                  >
+                  <i v-if="game.origin === 'steam' || game.origin === 'bnet'" @click.prevent="game.origin === 'steam' || 'bnet' ? openDetail(game) : null" class="detailsBtn bi bi-info" />
+                  <div
+                    v-if="game.origin === 'local'"
+                    class="iconApp"
+                    
+                  >
+                    <Promised
+                      v-if="game.data.mimeType == 'application/x-ms-shortcut'"
+                      :promise="$getIco(game.nodeKey)"
+                    >
+                      <template #default="data">
+                        <img
+                          class="iconCover"
+                          :src="data"
+                          :class="{ active: isActive }"
+                          @load="isLoaded()"
+                        >
+                      </template>
+                    </Promised>
+                    <Promised
+                      v-else-if="game.data.mimeType === 'application/x-msdos-program'"
+                      :promise="$getExeIcon(game.nodeKey)"
+                    >
+                      <template #default="data">
+                        <img
+                          class="iconCover"
+                          :src="data"
+                          :class="{ active: isActive }"
+                          @load="isLoaded()"
+                        >
+                      </template>
+                    </Promised>
+                  </div>
+                </div>
+                <div class="description" >
+                  <h3 class="title">
+                    {{ game.name }} - {{ game.analytic.launched}}x
+                  </h3>
+                  <p class="origin">
+                    
+                    <img class="launcherIcon" v-if="game.origin === 'steam' || 'bnet'" :src="'/img/ico/' + game.origin + '.png'" />
+                    <span v-else>{{ game.origin ? game.origin : 'External' }}</span>
+                  </p>
+                </div>
+                <v-contextmenu :ref="game.nodeKey">
+                  <v-contextmenu-item
+                    class="rightClickDelete"
+                    @click="resetCounter(game)"
+                  >
+                    <i
+                      class="bi bi-x"
+                      style="margin-right:5px"
+                    />Reset les stats
+                  </v-contextmenu-item>
+                </v-contextmenu>
+              </article>
+            </transition-group>
+          </div>
+          <div class="library" v-if="filterComponents.length > 0">
+            <h1 class="row_title" @click="panels.library = !panels.library">Library <span>#{{filterComponents.length}}</span></h1>
+            <transition-group tag="main" name="card" v-show="panels.library">
+              <article v-for="(game, index) in filterComponents" :key="index" v-contextmenu:[game.name] class="card" >
+                <div class="image" >
+                  <!-- <img v-if="image['#text'] !== ''" :src="image['#text']" :alt="album.name" v-on:load="isLoaded()" v-bind:class="{ active: isActive }"> -->
+                  <img
+                    v-if="game.game"
+                    :src="game.game.cover"
+                    :alt="game.name"
+                    :class="{ active: isActive }"
+                    @load="isLoaded()"
+                    @click="game.origin === 'bnet' ? openBnetGame(game) : openSteamGame(game)"
+                  >
+                  <img
+                    v-else
+                    src="/img/bg2.jpg"
+                    :alt="game.name"
+                    :class="{ active: isActive }"
+                    @load="isLoaded()"
+                    @click="launchApp(game.nodeKey)"
+                  >
+                  <i v-if="game.origin === 'steam' || game.origin === 'bnet'" @click.prevent="game.origin === 'steam' || 'bnet' ? openDetail(game) : null" class="detailsBtn bi bi-info" />
+                  <div
+                    v-if="game.origin === 'local'"
+                    class="iconApp"
+                    
+                  >
+                    <Promised
+                      v-if="game.data.mimeType == 'application/x-ms-shortcut'"
+                      :promise="$getIco(game.nodeKey)"
+                    >
+                      <template #default="data">
+                        <img
+                          class="iconCover"
+                          :src="data"
+                          :class="{ active: isActive }"
+                          @load="isLoaded()"
+                        >
+                      </template>
+                    </Promised>
+                    <Promised
+                      v-else-if="game.data.mimeType === 'application/x-msdos-program'"
+                      :promise="$getExeIcon(game.nodeKey)"
+                    >
+                      <template #default="data">
+                        <img
+                          class="iconCover"
+                          :src="data"
+                          :class="{ active: isActive }"
+                          @load="isLoaded()"
+                        >
+                      </template>
+                    </Promised>
+                  </div>
+                </div>
+                <div
+                  class="description"
+                >
+                  <h3 class="title">
+                    {{ game.name }}
+                  </h3>
+                  <p class="origin">
+                    
+                    <img class="launcherIcon" v-if="game.origin === 'steam' || 'bnet'" :src="'/img/ico/' + game.origin + '.png'" />
+                    <span v-else>{{ game.origin ? game.origin : 'External' }}</span>
+                  </p>
+                </div>
+                <v-contextmenu :ref="game.name">
+                  <v-contextmenu-item
+                    class="rightClickDelete"
+                    @click="removeToLauncher(game)"
+                  >
+                    <i
+                      class="bi bi-trash"
+                      style="margin-right:5px"
+                    />Supprimer
+                  </v-contextmenu-item>
+                </v-contextmenu>
+              </article>
+            </transition-group>
+            <h1 v-if="filterComponents.length <= 0 && panels.library" key="noRst" class="noResults" >
+              Aucun résultat(s) trouvé(s)
+            </h1>
+          </div>
+          
+        </section>
+        </div>
+      </main>
     </div>
-    <game-details
-      v-if="gameDetails"
-      v-model="gameDetails"
-      width="900px"
-    >
+    <game-details v-if="panels.gameDetails" v-model="panels.gameDetails" width="910px" :datas='gameData'>
       <template #header>
         <div
           v-if="gameData.game.background"
@@ -168,7 +259,7 @@
               <p>{{ gameData.game.app_name }}</p>
               <button
                 class="shortLaunch"
-                @click="gameDetails.origin === &quot;bnet&quot; ? openBnetGame(gameData) : openSteamGame(gameData), (gameDetails = false)"
+                @click="gameData.origin === 'bnet' ? openBnetGame(gameData) : openSteamGame(gameData), (gameDetails = false)"
               >
                 <i class="bi bi-play-fill" />
                 <span>Lancer !</span>
@@ -186,6 +277,7 @@
                   + {{ gameData.game.categories.length - 4 }}
                 </li>
               </ul>
+              <span style="font-size: 12px; margin:auto 15px;">Total joué : {{ msToTime(gameData.analytic.played) }}</span>
             </div>
           </div>
         </div>
@@ -200,7 +292,7 @@
               <p>{{ gameData.label }}</p>
               <button
                 class="shortLaunch"
-                @click="gameDetails.origin === &quot;bnet&quot; ? openBnetGame(gameData) : openSteamGame(gameData), (gameDetails = false)"
+                @click="gameData.origin === &quot;bnet&quot; ? openBnetGame(gameData) : openSteamGame(gameData), (panels.gameDetails = false)"
               >
                 <i class="bi bi-play-fill" />
                 <span>Lancer !</span>
@@ -218,18 +310,18 @@
       </template>
       <template #body>
         <div v-if="gameData.game.description" v-html="gameData.game.description" />
+        <div class="stats_graph">
+          <Graph v-if="gameData.analytic.launched > 0" :graph-items="gameData.analytic.stat" />
+        </div>
       </template>
     </game-details>
     
-    <modal
-      v-model="manualAdd"
-      :close-btn="false"
-    >
+    <modal v-model="panels.manualAdd" :close-btn="false" >
       <template #header>
         Ajouter au launcher
       </template>
       <template #body>
-        <p style="color:rgba(255,255,255,0.4), font-weight: 200; font-size:12px; margin-bottom: 34px"><i class="bi bi-exclamation-triangle-fill" style="color:red;"></i> Attention, merci de bien selectionner l'executable du jeu </p>
+        <p style="opacity:0.4, font-weight: 200; font-size:12px; margin-bottom: 34px"><i class="bi bi-exclamation-triangle-fill" style="color:red;"></i> Attention, merci de bien selectionner l'executable du jeu </p>
         <label for="HandAdd" class="AddLauncher"> {{localFileSelected ? localFileSelected.name : 'Selectionne ton executable'}}</label>
         <input
           id="HandAdd"
@@ -244,30 +336,51 @@
         <button
           type="primary"
           class="closed"
-          @click="resetFieldAdd(), (manualAdd = false)"
+          @click="resetFieldAdd(), (panels.manualAdd = false)"
         >
           Annuler
         </button>
         <button
           type="primary"
           v-if='localFileSelected'
-          @click="addToLauncher(localFileSelected) ,(manualAdd = false)"
+          @click="addToLauncher(localFileSelected) ,(panels.manualAdd = false)"
         >
           Ajouter
         </button>
       </template>
     </modal>
 
-    <modal
-      v-model="steamModal"
-      :close-btn="false"
-    >
+    <modal v-model="panels.steamModal" :close-btn="false" >
       <template #header>
         Metadonnées
       </template>
       <template #body>
         <progress :value="SteamLoading" />
         <p>{{ loadMessage }}</p>
+      </template>
+    </modal>
+
+    <modal v-if="panels.stats_overview" v-model="panels.stats_overview" :close-btn="true" width="80%">
+      <template #header>
+        Statistiques
+      </template>
+      <template #body>
+        <div class="totalStats" style="height: fit-content !important">
+          <eGraph :graph-items="$store.state.gameList" />
+        </div>
+      </template>
+    </modal>
+
+    <modal v-model="panels.dbCleanModal" :close-btn="true" >
+      <template #header>
+        Suppression de la base de données
+      </template>
+      <template #body>
+        <p>Voulez-vous vraiment supprimer votre base de données interne ?</p>
+      </template>
+      <template #actions>
+        <button @click="panels.dbCleanModal = false">Annuler</button>
+        <button  class="closed" @click="clearDatabase(), (panels.dbCleanModal = false)">Supprimer</button>
       </template>
     </modal>
   </div>
@@ -277,14 +390,19 @@
 // Imports global
 import { openDB } from 'idb'
 import modal from '@/widgets/Dialog.widget'
-import gameDetails from '@/widgets/Details.widget.vue'
+import gameDetails from '@/widgets/Details.widget'
 import { Promised } from 'vue-promised'
+import clickoutside from '@/directives/clickOutside'
+import _ from 'lodash'
 import path from 'path'
+import Graph from '@/widgets/Graph.widget'
+import eGraph from '@/widgets/echarts.widget'
 // Impots libs
 const scraper = require('@/lib/steamScraper')
 const fs = require('fs')
 const electron = window.require ? window.require('electron') : null
 const { shell, Notification  } = require('electron')
+
 
 /* eslint-disable no-alert, no-console */
 function getValues (obj, key) {
@@ -306,19 +424,32 @@ export default {
   components: {
     modal,
     gameDetails,
-    Promised
+    Promised,
+    Graph,
+    eGraph
   },
+  directives: { clickoutside },
   data () {
     return {
       isActive: false,
+      panels: {
+        filterShow: false,
+        headShow: true,
+        recent: true,
+        library: true,
+        microNav: false,
+
+        stats_overview: false,
+        dbCleanModal: false,
+        steamModal: false,
+        gameDetails: false,
+        manualAdd: false,
+      },
       indexDbGame: null,
       dbName2: 'games',
       dbGmName: 'games',
       datas: [],
       loading: false,
-      steamModal: false,
-      gameDetails: false,
-      manualAdd: false,
       localFileSelected: null,
       gameData: {},
       SteamLoading: 0,
@@ -332,11 +463,14 @@ export default {
         {name:'Battle.net', tag: 'bnet', icon: '/img/ico/bnet.png'},
         {name:'Local' , tag: 'local', icon: '/img/ico/local.png'}],
       SelectedCat: 'All',
-
+      timePlayed: null,
+      timePlayedTotal: null,
       steamPath: [],
       bnetPath: [],
       originPath: [],
-      epicPath: []
+      epicPath: [],
+      gameListed: [],
+      analytic: []
     }
   },
   computed: {
@@ -345,8 +479,12 @@ export default {
         esc: this.escp
       }
     },
+    recentPlayed() {
+      return _(this.$store.state.gameList).filter(item => item.analytic.launched >= 1).orderBy(item => item.analytic.launched,'desc').value()
+      //return this.$store.state.gameList.sort((a, b) => a.analytic.launched + b.analytic.launched );
+    },
     filterComponents () {
-      console.log(this.SelectedCat)
+      //console.log(this.SelectedCat)
       if (this.SearchGame !== '') {
         return this.$store.state.gameList.filter(item => {
           return item.label.toLowerCase().includes(this.SearchGame.toLowerCase()) || item.origin.toLowerCase().includes(this.SearchGame.toLowerCase())
@@ -358,12 +496,35 @@ export default {
       }
 
       return this.$store.state.gameList
+    },
+    gameList() {
+      return this.$store.state.gameList.filter(item => {
+        return item.label
+      })
     }
 
   },
   async created () {
     this.getBnetPath()
     this.initialize()
+    this.sendDataToMain()
+  },
+  mounted() {
+    
+    electron.ipcRenderer.on('message', function (event, text) {
+      console.log(text)
+    })
+    setTimeout(() => {
+      this.$store.state.gameList.forEach(item => {
+        let datas = {
+          name: item.name,
+          analytic: item.analytic.stat
+        }
+        this.analytic.push(datas)
+      })
+    }, 1000)
+    
+    
   },
   methods: {
     async previewFiles(event) {
@@ -376,7 +537,7 @@ export default {
       //document.getElementById('HandAdd').value = null
       this.localFileSelected = null
       this.$refs.fileAdd.value= null
-      console.log(this.localFileSelected)
+      //console.log(this.localFileSelected)
     },
     playVideo() {
       setTimeout(() => {
@@ -386,7 +547,7 @@ export default {
     setCat (item) {
       this.SelectedCat = item
     },
-    isLoaded: function () {
+    isLoaded () {
       this.isActive = true
     },
     // Open and Init DB
@@ -394,7 +555,14 @@ export default {
       this.initIndexDbGame()
       this.indexDbGame = await this.initIndexDbGame()
       console.log('initialize indexDb : ', this.indexDbGame)
-      this.setGameList()
+      this.setGameList()   
+    },
+    sendDataToMain() {
+      setTimeout(() => {
+        const data = JSON.stringify(this.gameListed)
+        electron.ipcRenderer.send('myGameList', data)  
+      }, 500)
+      
     },
     async initIndexDbGame () {
       return await openDB(this.dbName2, 2, {
@@ -404,7 +572,7 @@ export default {
       })
     },
     refreshGames () {
-      this.steamModal = true
+      this.panels.steamModal = true
       setTimeout(() => {
         this.WalkSteamDir()
         this.WalkBnetDir()
@@ -438,7 +606,7 @@ export default {
 
         const bnetGamesfolders = electron.ipcRenderer.sendSync('req_bnet', clientRoot)
         const bnetContents = bnetGamesfolders.contents
-        console.log(bnetContents)
+        //console.log(bnetContents)
 
         if(bnetContents.length > 0) {
           bnetContents.forEach(elem => {
@@ -447,7 +615,7 @@ export default {
         } 
 
       } else {
-        this.steamModal = false
+        this.panels.steamModal = false
         console.log("Il semblerait qu'une erreur innatendue soit arrivée !")
       }
     },
@@ -469,28 +637,33 @@ export default {
 
       // Origins call req_steam (Chemins configurer avec Steam ou tu installes tes jeux)
       origins = await electron.ipcRenderer.sendSync('req_steam')
-
+      
       // Boucles logiques
       origins.forEach(FoldersPath => {
-        const res = electron.ipcRenderer.sendSync('req_folderContents', FoldersPath.id)
-        const resParse = res
-        console.log(res)
+        const res = electron.ipcRenderer.sendSync('req_folderContents', FoldersPath.nodeKey)
+        const resParse = JSON.parse(res)
         const newContents = resParse.contents
+        
+        
+
         resultPath_.push(newContents)
         this.loadMessage = 'Recherche des racines Steam'
         
-
         // check les perfs
         if (resultPath_.length >= 2) {
           acfFiles = [].concat.apply([], resultPath_).filter(word => word.nodeKey.includes('.acf'))
         }
       })
 
+      
+
       // Only ACF Files
       acfFiles.forEach(read => {
         const parsedACF = this.AppManifestParser(read.nodeKey)
         appIds_.push(parsedACF)
       })
+
+      
 
       // Parcours les ID et les maps en item utilisable
       appIds_.forEach(res => {
@@ -503,6 +676,8 @@ export default {
           console.log(resObj)
           results.push(resObj)
         })
+
+
 
         setTimeout(() => {
           timer = setInterval(() => {
@@ -558,7 +733,7 @@ export default {
           this.loadMessage = 'Ajouts terminés'
           this.setGameList()
           setTimeout(() => {
-            this.steamModal = false
+            this.panels.steamModal = false
           }, 1000)
         }, 1000)
         
@@ -569,7 +744,7 @@ export default {
           this.loadMessage = 'Aucun élément ajouter'
           this.setGameList()
           setTimeout(() => {
-            this.steamModal = false
+            this.panels.steamModal = false
           }, 1000)
         }, 1000)
       }
@@ -582,6 +757,11 @@ export default {
       await transaction.objectStore(this.dbGmName).delete(item.data.stat.ino)
       this.setGameList()
     },
+    async clearDatabase() {
+      const transaction = this.indexDbGame.transaction([this.dbGmName], 'readwrite')
+      await transaction.objectStore(this.dbGmName).clear()
+      this.setGameList()  
+    },
     // Set vuex from DB
     async setGameList () {
       const allItems = await this.indexDbGame.getAll(this.dbGmName)
@@ -589,6 +769,24 @@ export default {
       this.$store.dispatch('GAME_LIST', allItems)
       this.$store.dispatch('GAME_KEYS', allKeys)
       this.gamesLoaded = true
+      this.getGameList()
+    },
+    getGameList() {
+      this.$store.state.gameList.forEach(item => {
+        // const getLastItem = thePath => thePath.substring(thePath.lastIndexOf('\\') + 1)
+        // let lastPath = getLastItem(item.nodeKey)
+        if(this.gameListed.includes(item.data.process) || this.gameListed.includes(item.label + '.exe')) {
+          return
+        } else {
+          if(item.data.process) {
+            console.log('Process: ' + item.data.process)
+            this.gameListed.push(item.data.process)
+          } else {
+            console.log('Process + exe added: ' + item.label + '.exe')
+            this.gameListed.push(item.label + '.exe')
+          }
+        }
+      }) 
     },
     // Return un ACF file parsé
     isNumeric (n) {
@@ -614,7 +812,7 @@ export default {
     // Details modal function
     openDetail (item) {
       if (item.game) {
-        this.gameDetails = true
+        this.panels.gameDetails = true
         this.gameData = item
       } else {
         console.log('La fenêtre modal doit être configué, demander au dev de se bouger le cul.')
@@ -622,19 +820,101 @@ export default {
     },
     // Open apps
     openSteamGame (id) {
+      this.putLaunched(id)
+      this.timePlayed = new Date().getTime()
+      console.log(this.timePlayed)
       shell.openExternal(`steam://run/${id.appid}`)
       electron.ipcRenderer.send('close')
       const data = id.name
-      console.log(data)
-      electron.ipcRenderer.send('game_launch', data.toString())
+      electron.ipcRenderer.send('game_launch', data.toString(), this.timePlayed)
       console.log("Ouverture de l'application " + id.name)
+      electron.ipcRenderer.on('stopPlayed', (event, arg) => {
+        this.timePlayedTotal = arg
+        console.log(this.timePlayedTotal)
+        setTimeout(() => {
+          this.putTimePlayed(id)
+        },2000)
+      })
     },
     openBnetGame (id) {
+      this.putLaunched(id)
+      this.timePlayed = new Date().getTime()
+      console.log(this.timePlayed)
       const { exec } = require('child_process')
       exec(`"${localStorage.bnetRoot}" --exec="launch ${id.appid}"`)
       electron.ipcRenderer.send('close')
-      electron.ipcRenderer.send('game_launch', id.name)
-      console.log(id.appid)
+      electron.ipcRenderer.send('game_launch', id.name, this.timePlayed)
+      electron.ipcRenderer.on('stopPlayed', (event, arg) => {
+        this.timePlayedTotal = arg
+        console.log(this.timePlayedTotal)
+        setTimeout(() => {
+          this.putTimePlayed(id)
+        },500)
+      })
+    },
+    async resetCounter(id) {
+      const allKeys = await this.indexDbGame.getAllKeys(this.dbGmName)
+      
+      if (allKeys.includes(id.data.stat.ino)) {
+        let value = await this.indexDbGame.get(this.dbGmName, id.data.stat.ino);
+        
+        value.analytic.launched = 0
+        value.analytic.played = 0
+        value.analytic.stat = []
+        console.log(value)
+        await this.indexDbGame.put(this.dbGmName, value , id.data.stat.ino)
+        this.setGameList()
+      }
+    },
+    async putTimePlayed(id) {
+      const allKeys = await this.indexDbGame.getAllKeys(this.dbGmName)
+      
+      if (allKeys.includes(id.data.stat.ino)) {
+        let value = await this.indexDbGame.get(this.dbGmName, id.data.stat.ino);
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+        var yyyy = today.getFullYear();
+        today = dd + '/' + mm + '/' + yyyy;
+        console.log(today)
+        value.analytic.played = value.analytic.played + this.timePlayedTotal
+
+        let index = value.analytic.stat.findIndex(date => date.date == today) 
+        console.log(index)
+        if(index === -1){
+          value.analytic.stat.push({date: today, time: this.timePlayedTotal})
+        } else {
+          value.analytic.stat[index].time = value.analytic.stat[index].time + this.timePlayedTotal
+        }
+        
+        console.log(value)
+        await this.indexDbGame.put(this.dbGmName, value , id.data.stat.ino)
+        this.setGameList()
+      }
+
+    },
+     msToTime(ms) {
+      var milliseconds = parseInt((ms % 1000) / 100),
+          seconds = Math.floor((ms / 1000) % 60),
+          minutes = Math.floor((ms / (1000 * 60)) % 60),
+          hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+      hours = (hours < 10) ? "0" + hours : hours;
+      minutes = (minutes < 10) ? "0" + minutes : minutes;
+      seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+      return hours > 0 ? hours + "h " : '' +  minutes > 0 ? minutes + "min " : '' + seconds > 0 ? seconds + 's': ''
+    },
+    async putLaunched(id) {
+      const allKeys = await this.indexDbGame.getAllKeys(this.dbGmName)
+      
+      if (allKeys.includes(id.data.stat.ino)) {
+        let value = await this.indexDbGame.get(this.dbGmName, id.data.stat.ino);
+        
+        value.analytic.launched++
+        console.log(value)
+        await this.indexDbGame.put(this.dbGmName, value , id.data.stat.ino)
+        this.setGameList()
+      }
     },
     launchApp (items) {
       shell.openPath(items)
@@ -647,18 +927,28 @@ export default {
         this.SelectedCat = 'All'
         this.SearchGame = ''
       }, 200)
-      if (this.steamModal || this.gameDetails) {
+      if (this.panels.steamModal || this.panels.gameDetails || this.panels.stats_overview || this.panels.dbCleanModal || this.panels.steamModal || this.panels.manualAdd) {
         setTimeout(() => {
-          this.steamModal = false
-          this.gameDetails = false
+          this.panels.stats_overview = false
+          this.panels.dbCleanModal = false
+          this.panels.steamModal = false
+          this.panels.manualAdd = false
+
+          this.panels.steamModal = false
+          this.panels.gameDetails = false
         }, 200)
       }
-      if (await this.steamModal === false && await this.gameDetails === false && await this.SelectedCat === 'All' && await this.SearchGame === '') {
-        console.log(this.steamModal,
-          this.gameDetails,
-          this.SelectedCat,
-          this.SearchGame)
+      if (await this.panels.steamModal === false && await this.panels.gameDetails === false && await this.SelectedCat === 'All' && await this.SearchGame === '') {
+        // console.log(this.panels.steamModal,
+        //   this.panels.gameDetails,
+        //   this.SelectedCat,
+        //   this.SearchGame)
         electron.ipcRenderer.send('close', true)
+      }
+    },
+    closemicroNav() {
+      if(this.panels.microNav) {
+        this.panels.microNav = false
       }
     }
   }
@@ -667,7 +957,8 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/assets/style/global.scss';
-
+@import url('https://fonts.googleapis.com/css2?family=Paytone+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;900&display=swap');
 $background: #222129;
 $card: rgba(white, 5%);
 $spotify-green: rgb(30, 215, 96);
@@ -677,13 +968,11 @@ $grid-min: 175px;
 $grid-gap: 30px;
 
 a {
-    color: white;
     text-decoration: none;
 }
 
 h1 {
     font-size: 25px;
-    color: white;
 }
 
 h3 {
@@ -732,91 +1021,269 @@ label.AddLauncher {
       transform: translateY(0);
       background: darken($principal, 5%);
     }
-    color:white;
     font-weight: bold;
   }
 }
+
+.material {
+	position: fixed;
+	width: 300px;
+	height: 320px;
+	
+	bottom: 90px;
+	right: 25px;
+	transform: scale(0);
+	transform-origin: 100% 100%;
+  border-radius: 8px;
+	
+	transition: .3s all cubic-bezier(0.19, 1, 0.22, 1);
+  z-index: 9;
+  overflow: hidden;
+  &.theme-light {
+    background: #fff;
+    box-shadow: 0px 5px 5px rgba(126, 111, 111, 0.39);
+    ul li {
+      background: #dadada;
+      color: rgb(105, 105, 105);
+    }
+  }
+  &.theme-dark {
+    background: rgba(24,24,24,1);
+    box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.39);
+    ul li {
+      background: #222;
+      color: rgb(105, 105, 105);
+    }
+  }
+  &.active {
+    transform: scale(1);
+  }
+  ul {
+    width: 100%;
+    height: 100%;
+    padding: 15px;
+    box-sizing: border-box;
+    overflow-y: scroll ;
+    background:transparent;
+    li {
+      position:relative;
+      display: flex;
+      padding: 0 18px;
+      box-sizing: border-box;
+      border-radius: 5px;
+      
+      opacity: 0.5;
+      margin: 5px auto;
+      height: 55px;
+      overflow: hidden;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.5s;
+      &:hover {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+      &:nth-child(1) {
+        .iconMico {
+          background-image: linear-gradient(to left bottom, #00c9a7, #09c1a2, #11b99d, #17b297, #1baa92);   
+        }
+      }
+      &:nth-child(2) {
+        .iconMico {
+          background-image: linear-gradient(to left bottom, #845ec2, #7954b4, #6d4aa6, #624098, #57378a);
+        }
+      }
+      &:nth-child(3) {
+        .iconMico {
+          background-image: linear-gradient(to left bottom, #ff9671, #ff895f, #ff7b4c, #ff6d39, #ff5d24);   
+        }
+      }
+      &:nth-child(4) {
+        .iconMico {
+          background: linear-gradient(to top, red 0%, blue 100%)
+        }
+      }
+      .iconMico {
+        position: relative;
+        display: flex;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin: auto 10px auto 0;
+        
+        i {
+          color: white;
+          margin: auto;
+        }
+      }
+      span {
+        width: 80%;
+        margin:auto 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: gray;
+      }
+    }
+  }
+}
+
+.icon {
+  clear: both;
+	position: fixed;
+	bottom: 50px;
+	right: 0;
+	width: 50px;
+  height: 50px;
+	height: 40px;
+  z-index: 9;
+  a {
+    display: flex;
+    vertical-align: middle;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+    margin:auto;
+    color: white;
+    font-size: 20px;
+    > i {
+      margin: auto;
+    }
+  }
+}
+
+
+.stats_graph {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.launcher {
+  position:relative;
+  display: flex;
+  flex-flow: column nowrap;
+  row-gap: 0px;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+.games_container {
+  width: 100%;
+  overflow-y:auto;
+  transition: all 0.5s;
+  animation: fadou 0.5s forwards;
+  z-index: 0;
+}
 .searchAndFilter {
-  min-height: 150px;
+  position: relative;
+  width: 100%;
+  //background: rgba(#000, 50%);
   border-bottom: 1px solid rgba(white,5%);
   display: flex;
   flex-direction: column;
+  height: 100px;
+  transform: translateY(0);
+  transition: transform 0.5s;
+  z-index: 1;
   .formGroup{
     position:relative;
-    margin:auto auto 0 auto;
-    width: fit-content;
+    margin:auto;
+    width: 80%;
     display: flex;
     vertical-align: middle;
-    color: rgba(white, 10%);
     &:focus-within {
       input {
         outline: none;
-        color: rgba(white, 100%);
-        border-color: rgba($principal, 100%);
+        color: white;
+        opacity: 1;
       }
-      i {
-        color: rgba(white, 100%);
-      }
+      // i {
+      //   color: rgba(white, 100%);
+      // }
     }
     input {
       margin:auto 0;
       border: none;
       background:transparent;
       min-width: 700px;
+      width: 100%;
       padding: 15px 18px 15px 50px;
       box-sizing: border-box;
       font-size: 1.2em;
-      color: rgba(white, 10%);
       border-radius: 8px;
-      border: 2px solid rgba($principal, 10%);
       transition: all 0.5s;
-
+      background: rgba(white, 5%);
+      color: white;
+      opacity: 0.5;
     }
-    i {
+    i.searchIcon {
       position:absolute;
       margin:auto;
       left: 18px;
       top:50%;
       transform: translateY(-50%);
     }
-  }
-  .tags {
-    width: auto;
-    margin: 20px auto auto auto;
-    display: block;
-    color: rgba(white,10%);
-    ul {
-      display: flex;
-      vertical-align: middle;
-      li {
-        margin: auto 10px;
-        font-size: 1.1em;
-        text-transform: uppercase;
-        font-weight: normal;
-        transition: all 0.5s;
-        img {
-          width: 34px;
-          margin: auto;
-          filter: grayscale(100%);
+    i.filterIcon {
+      margin: auto 15px;
+    }
+    .tags {
+      position:absolute;
+      top: 120%;
+      right: 0;
+      width: fit-content;
+      margin:auto;
+      padding: 12px 18px;
+      box-sizing: border-box;
+      border-radius: 5px;
+      background:rgba(24,24,24,1);
+      box-shadow: 0 0 5px -2px black;
+      z-index: +1;
+
+      transform: scale(0);
+      transform-origin: 100% 0;
+      transition: .3s all cubic-bezier(0.19, 1, 0.22, 1);
+
+      &.actived {
+        transform: scale(1);
+      }
+      ul {
+        display: flex;
+        vertical-align: middle;
+        user-select: none;
+        li {
+          margin: auto 10px;
+          font-size: 1.1em;
+          text-transform: uppercase;
+          font-weight: normal;
           transition: all 0.5s;
-          &:hover {
-            filter: grayscale(0%);
-          }
-        }
-        p {
-          margin: auto;
-        }
-        &:hover {
-          color: rgba(white,100%);
-          cursor: pointer;
-          transform: scale(1.1);
-        }
-        &.active {
-          color: rgba(white,100%);
-          font-weight: 600;
-          transform: scale(1.1);
+          opacity: 0.2;
           img {
-            filter: grayscale(0%);
+            width: 34px;
+            margin: auto;
+            filter: grayscale(100%);
+            transition: all 0.5s;
+            &:hover {
+              filter: grayscale(0%);
+            }
+          }
+          p {
+            margin: auto;
+          }
+          &:hover {
+            opacity: 1;
+            cursor: pointer;
+            transform: scale(1.1);
+          }
+          &.active {
+            opacity: 1;
+            font-weight: 600;
+            transform: scale(1.1);
+            img {
+              filter: grayscale(0%);
+            }
           }
         }
       }
@@ -824,10 +1291,73 @@ label.AddLauncher {
   }
 }
 
+.headHidden {
+  transform: translateY(-100%);
+  animation: headerHasBeenHide 0.5s 0.2s forwards;
+}
+
+@keyframes headerHasBeenHide {
+  from {
+    position:relative
+  }
+  to {
+    position: absolute;
+  }
+}
+@keyframes fadou {
+  from {
+    opacity:0;
+  }
+  to {
+    opacity:1;
+  }
+}
+
+
+.viewport {
+  display: flex;
+  flex-direction: column ;
+  width: 100%;
+  height: 100%;
+  .row_title {
+    display: flex;
+    vertical-align: middle;
+    font-size: 40px;
+    padding-left:4%;
+    margin: 0;
+    width: fit-content;
+    height: 80px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: bold;
+    text-transform: uppercase;
+    user-select: none;
+    cursor: pointer;
+    color: rgba(#666, 10%);
+    span {
+      color: #666;
+      margin: 8px 15px auto 15px;
+      font-size:0.4em;
+      letter-spacing: normal;
+      text-transform: none;
+      font-family: 'Roboto', sans-serif;
+    }
+    &.firstTitle {
+      margin-top: 55px;
+    }
+  }
+  .recent {
+    width: 100%;
+    margin-top:0
+  }
+  .library {
+    width: 100%;
+    margin-top:0
+  }
+}
+
+
 .noResults {
-  position:absolute;
-  top:50%;
-  left: 0;
+  position:relative;
   transform: translateY(-50%);
   width: 100%;
   text-align: center;
@@ -843,7 +1373,7 @@ label.AddLauncher {
   vertical-align: middle;
   justify-content: center;
   z-index: 999;
-  .addGames {
+  button {
     width: 50px;
     height: 50px;
     background:none;
@@ -858,6 +1388,21 @@ label.AddLauncher {
     cursor: pointer;
     margin: auto 5px;
     transition:all 0.5s;
+  }
+  .clearDB {
+    > i {
+      margin:auto;
+      padding-top: 2.5px;
+      transition:all 0.5s;
+    }
+    &:hover {
+      opacity: 1;
+      > i {
+        color: #e74c3c;
+      }
+    }
+  }
+  .addGames {
     &:hover {
       opacity: 1;
       > i {
@@ -876,20 +1421,6 @@ label.AddLauncher {
     }
   }
   .refreshGames {
-    width: 50px;
-    height: 50px;
-    background:none;
-    border: 2.5px solid white;
-    border-radius: 50%;
-    color:white;
-    font-size: 1.1em;
-    display: flex;
-    vertical-align: middle;
-    justify-content: center;
-    opacity: 0.3;
-    cursor: pointer;
-    margin: auto 5px;
-    transition:all 0.5s;
     &:hover {
       opacity: 1;
       > i {
@@ -936,12 +1467,7 @@ label.AddLauncher {
   }
 }
 
-.games_container {
-  position: relative;
-  height: calc(100vh - 149px);
-  width: 100%;
-  overflow-y:auto;
-}
+
 
 .iconApp {
   margin:auto;
@@ -959,7 +1485,7 @@ main {
   grid-template-columns: repeat($grid-items, minmax($grid-min, 1fr));
   grid-gap: $grid-gap;
   counter-reset: rank;
-  margin: 4%;
+  margin:-40px 4% 4% 4%;
   article {
     counter-increment: rank;
     position: relative;

@@ -1,29 +1,23 @@
 'use strict'
-import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow, nativeImage  } from 'electron'
+import { app, protocol, screen, ipcMain, globalShortcut, Menu, Tray, BrowserWindow, nativeImage, ipcRenderer } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-const log = require('electron-log');
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import * as os from 'os'
 import IpcRegister from './api/IpcRegister'
-import fs from "fs"
 import path from 'path'
-const { setVibrancy } = require('electron-acrylic-window')
-const storage = require('electron-json-storage')
-const defaultDataPath = storage.getDefaultDataPath()
-storage.setDataPath(defaultDataPath + '/config')
-const dataPath = storage.getDataPath();
-//const unhandled = require('electron-unhandled');
-import DiscordRPC from 'discord-rpc'
-const { autoUpdater } = require("electron-updater")
+import { DiscordHandler } from './utils/discord'
+import settings from 'electron-settings';
+import {sendStatusToWindow, sendSpeedDownload, sendPercentageDownload} from './utils/updateSender'
+const unhandled = require('electron-unhandled');
+const log = require('electron-log')
+//const { setVibrancy } = require('electron-acrylic-window')
+const acrylicWindow = require('electron-acrylic-window').BrowserWindow
+const { autoUpdater } = require('electron-updater')
 
-//unhandled();
-
-
+log.transports.console.useStyles = true
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const isWindows10 = process.platform === 'win32' && os.release().split('.')[0] === '10'
-protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { secure: true, standard: true } }
-])
+protocol.registerSchemesAsPrivileged([ { scheme: 'app', privileges: { secure: true, standard: true } } ])
 
 const singleInstance = app.requestSingleInstanceLock()
 let win: BrowserWindow
@@ -31,136 +25,110 @@ let winSettings: BrowserWindow
 let splash: BrowserWindow
 let tray
 const iconTray = nativeImage.createFromPath(path.join(__dirname, '/img/tray.png'))
-let vibrancyOp
-let userStatus = "online"
+let theme
+let userStatus = 'online'
 let iconStatus
-if(isDevelopment) {
+iconStatus = {
+  online: path.join(__dirname, '/img/status/online.png'),
+  busy: path.join(__dirname, '/img/status/busy.png'),
+  afk: path.join(__dirname, '/img/status/afk.png'),
+  offline: path.join(__dirname, '/img/status/offline.png')
+}
+
+init()
+
+async function init() {
+  settings.configure({prettify: true});
+  
+  if(settings.file()) {
+    log.warn(`%cRacine des options: %c${settings.file()} / OK`,'color: green', 'color:magenta')
+    // await settings.set('parameters', {
+    //   name: 'NA',
+    //   trigger: 'CTRL+G',
+    //   autostart: true,
+    //   userStatus: 'Online',
+    //   customStatus: "Je suis une licorne !",
+    //   refreshStatusTime: { time: 5e3, value: "5s, Ok normal" },
+    //   theme_selected: 'dark',
+    //   boxed: false
+    // });
+  } else {
+    await settings.set('parameters', {
+      name: 'NA',
+      trigger: 'Ctrl+G',
+      autostart: true,
+      userStatus: 'Online',
+      customStatus: "Je suis une licorne !",
+      refreshStatusTime: { time: 5e3, value: "5s, Ok normal" },
+      theme_selected: 'dark',
+      boxed: true
+    });
+  }
+}
+
+// acrylic / blur
+
+// ------------------------------------------------------
+// à delete soon soon
+if (isDevelopment) {
+  unhandled();
   iconStatus = {
-    online:  path.join(__dirname, '../public/img/status/online.png'),
+    online: path.join(__dirname, '../public/img/status/online.png'),
     busy: path.join(__dirname, '../public/img/status/busy.png'),
     afk: path.join(__dirname, '../public/img/status/afk.png'),
-    offline:path.join(__dirname, '../public/img/status/offline.png')
+    offline: path.join(__dirname, '../public/img/status/offline.png')
   }
-} else {
-  iconStatus = {
-    online: path.join(__dirname, '/img/status/online.png'),
-    busy: path.join(__dirname, '/img/status/busy.png'),
-    afk: path.join(__dirname, '/img/status/afk.png'),
-    offline: path.join(__dirname, '/img/status/offline.png')
-  }
-}
+} 
+// ------------------------------------------------------
 
 
-function sendStatusToWindow(text) {
-  log.info(text);
-  splash.webContents.send('message', text);
-}
-function sendSpeedDownload(text) {
-  log.info(text);
-  splash.webContents.send('speed', text);
-}
-function sendPercentageDownload(text) {
-  log.info(text);
-  splash.webContents.send('percentage', text);
-}
 
 function createSplashWindow () {
   splash = new BrowserWindow({
     width: 350,
     height: 500,
-    frame:false,
+    frame: false,
+    hasShadow: true,
     transparent: true,
-    //resizable: false,
+    resizable: false,
     webPreferences: {
       nodeIntegration: true,
-    },
-  });
-  createProtocol('app')
+      contextIsolation: false,
+    }
+  })
+  
   const splashScreen = process.env.NODE_ENV === 'development' ? 'http://localhost:8080/#updater' : `file://${__dirname}/index.html#updater`
-  splash.loadURL(splashScreen);
+  createProtocol('app')
+  splash.loadURL(splashScreen)
   splash.focus()
   ipcMain.on('cancelUpdate', () => {
     splash.close()
-    createWindow()
-    createWindowSettings()
+    createTray()
   })
   ipcMain.on('app_version', (event) => {
-    event.sender.send('app_version', { version: app.getVersion() });
-  });
+    event.sender.send('app_version', { version: app.getVersion() })
+  })
 
   return splash
 }
-
-async function createWindow () {
-  // Create the browser window.
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize
-
-  if (isWindows10) {
-    vibrancyOp = {
-      theme: '#8034495E',
-      effect: 'acrylic',
-      useCustomWindowRefreshMethod: false,
-      disableOnBlur: true,
-      debug: false
-    }
-  } else vibrancyOp = 'dark'
-
-  win = new BrowserWindow({
-    width,
-    height,
-    transparent: true,
-    frame: false,
-    hasShadow: false,
-    show: false,
-    alwaysOnTop: true,
-    fullscreen: true,
-    useContentSize: true,
-    skipTaskbar: true,
-    resizable: false,
-    webPreferences: {
-      nodeIntegration: (process.env
-        .ELECTRON_NODE_INTEGRATION as unknown) as boolean,
-      enableRemoteModule: true,
-      webSecurity: false
-    }
+function createTray() {
+  createWindow()
+  tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'En ligne', click () { userStatus = 'online' }, icon: iconStatus.online },
+    { label: 'Ne pas déranger', click () { userStatus = 'busy' }, icon: iconStatus.busy },
+    { label: 'Inactif', click () { userStatus = 'afk' }, icon: iconStatus.afk },
+    { label: 'Hors ligne', click () { userStatus = 'offline' }, icon: iconStatus.offline },
+    { type: 'separator' },
+    { label: "Ouvrir l'application", click () { win.show() } },
+    { label: 'Options', click () { createWindowSettings() } },
+    { label: 'Quitter', click () { app.quit() } }
+  ])
+  tray.on('double-click', function () {
+    win.show()
   })
-
-  setVibrancy(win, vibrancyOp)
-  if (process.env.WEBPACK_DEV_SERVER_URL) {
-    // Load the url of the dev server if in development mode
-    await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
-    if (!process.env.IS_TEST) win.webContents.openDevTools({ mode: 'detach' })
-  } else {
-    
-    // Load the index.html when not in development
-    
-    win.loadURL('app://./index.html')
-    createWindowSettings()
-    autoUpdater.checkForUpdatesAndNotify()
-  }
-  connectDiscord()
-  win.on('blur', () => {
-    win.hide()
-  })
-  return win
+  tray.setContextMenu(contextMenu)
 }
-
-ipcMain.on('close', () => {
-  win.hide()
-})
-ipcMain.on('reloadMainWindow', () => {
-  globalShortcut.unregisterAll()
-  win.reload()
-  createShortcut()
-})
-ipcMain.on('openSettings', () => {
-  winSettings.show()
-})
-
-ipcMain.on('openLauncherWhenSelected', () => {
-  win.show()
-})
-
 function createWindowSettings () {
   const settingsPath = process.env.NODE_ENV === 'development' ? 'http://localhost:8080/#settings' : `file://${__dirname}/index.html#settings`
 
@@ -170,7 +138,7 @@ function createWindowSettings () {
     transparent: false,
     hasShadow: true,
     frame: false,
-    show: false,
+    show: true,
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true
@@ -178,81 +146,202 @@ function createWindowSettings () {
   })
 
   winSettings.loadURL(settingsPath)
-  setAutoStart()
-  createShortcut()
 
   ipcMain.on('closeSettings', () => {
     console.log('close clicked')
-    app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) }) 
-    app.exit(0)
+    winSettings.close()
+  })
+  ipcMain.on('saveSettings', () => {
+    console.log('save clicked')
+    winSettings.close()
+    setAutoStart()
+    createShortcut()
+    //app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) }) 
+    //app.exit(0)
   })
 
   return winSettings
 }
+async function createWindow () {
+  // Create the browser window.
+  
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+  const themeSelected = await settings.get('parameters.theme_selected')
+  const getBoxed = await settings.get('parameters.boxed')
+  log.warn('Le theme est: ' + themeSelected)
 
-initParams()
-
-function initParams() {
-  const InitOptions = { parameters: { trigger: "Ctrl+G", nickname: "Non renseigner", autostart: true }}
-  const jsonString = JSON.stringify(InitOptions)
-  const dbPath = dataPath + '\\preferences.json'
-
-  if(fs.existsSync(dataPath)) {
-    fs.writeFile(dbPath, jsonString, { flag: 'wx' }, (err) => {
-      if (err) {
-        console.log('Le fichier preferences existe déjà')
-        return 
-      };
-    }); 
-  } else {
-    const defaultDataPath = storage.getDefaultDataPath()
-    storage.setDataPath(defaultDataPath + '/config')
-    setTimeout(() => {
-      initParams()
-    }, 1000)    
-  }
-
-  return 
-}
-function setAutoStart() {
-  if(fs.existsSync(dataPath + '\\preferences.json')) {
-    storage.get('preferences', function (error, settings) {
-      if (error) {
-        console.log(error)
+  if(isWindows10) {
+    if(themeSelected === 'dark') {
+      theme = {
+        theme: '#202425E6',
+        effect: 'acrylic',
+        useCustomWindowRefreshMethod: true,
+        disableOnBlur: true,
+        debug: true 
       }
-      let autostart = settings.parameters.autostart
-      app.setLoginItemSettings({
-        name:"Dash - Launcher",
-        openAtLogin: autostart
+    } else {
+      theme = {
+        theme: '#EEEEEE44',
+        effect: 'acrylic',
+        useCustomWindowRefreshMethod: true,
+        disableOnBlur: true,
+        debug: true 
+      }
+    }
+  } else {
+    theme = 'light'
+  }
+
+  win = new acrylicWindow({
+    frame: false,
+    hasShadow: true,
+    show: false,
+    alwaysOnTop: true,
+    fullscreen: getBoxed ? false : true,
+    transparent: getBoxed ? false : true,
+    useContentSize: true,
+    skipTaskbar: true,
+    resizable: false,
+    thickFrame: false,
+    vibrancy:theme,
+    webPreferences: {
+      nodeIntegration: (process.env
+        .ELECTRON_NODE_INTEGRATION as unknown) as boolean,
+      enableRemoteModule: true,
+      webSecurity: false,
+      contextIsolation: false,
+    }
+  })
+
+
+  if (process.env.WEBPACK_DEV_SERVER_URL) {
+    // Load the url of the dev server if in development mode
+    await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
+    if (!process.env.IS_TEST) win.webContents.openDevTools({ mode: 'detach' })
+  } else {
+    // Load the index.html when not in development
+    win.loadURL('app://./index.html')
+  }
+
+  setAutoStart()
+  createShortcut()
+
+  // Ajouter des conditions d'ouverture pour prevent les bug sur l'axe X ?
+  if(getBoxed) {
+    win.setBounds({width: width / 1.2, height: height - 200 })
+    const winSize = win.getSize()
+    let calculSpace = Math.round(width - winSize[0])  / 2
+    
+    win.setPosition(calculSpace, +winSize[1] - 100)
+  
+    win.on('hide', () => {
+      setTimeout(() => {
+        win.setPosition(calculSpace, +winSize[1] - 100)
+      },200)
+      
+    })
+    win.on('show', () => {
+      const winSize = win.getSize()
+      const winPos = win.getPosition()
+      log.warn(winSize, winPos)
+      animate(winPos[1], 190, (offsetY) => {
+        win.setPosition(winPos[0], offsetY)
       })
     })
   } else {
-    setTimeout(() => {
-      setAutoStart()
-    }, 2000)   
-  }
-}
-function createShortcut () {
-  if(fs.existsSync(dataPath + '\\preferences.json')) {
-    storage.get('preferences', function (error, settings) {
-      if (error) throw error
-      let shortcut = settings.parameters.trigger
-      globalShortcut.register(shortcut, () => {
-        if (win.isVisible()) {
-          win.hide()
-          console.log('pressed and hide')
-        } else {
-          win.show()
-          win.focus()
-          console.log('pressed and open')
-        }
+    const winSize = win.getSize()
+    win.setPosition(0, -winSize[1] + (winSize[1] - 200))
+  
+    win.on('hide', () => {
+      setTimeout(() => {
+        win.setPosition(0, -winSize[1] + (winSize[1] - 200))
+      },200)
+      
+    })
+    win.on('show', () => {
+      const winSize = win.getSize()
+      const winPos = win.getPosition()
+      log.warn(winSize, winPos)
+      animate(winPos[1], 0, (offsetY) => {
+        win.setPosition(winPos[0], offsetY)
       })
     })
-  }else {
-    setTimeout(() => {
-      createShortcut()
-    }, 2000)   
+
   }
+  
+
+  win.on('blur', () => {
+    win.hide()
+  })
+  ipcMain.on('openSettings', () => {
+    createWindowSettings()
+  })
+  ipcMain.on('close', () => {
+    win.hide()
+  })
+  ipcMain.on('openLauncherWhenSelected', () => {
+    win.show()
+  })
+
+  return win
+}
+
+function animate (start, end, fn) {
+  // console.time('animate')
+  return new Promise((resolve, reject) => {
+    let timer 
+    let offset = end - start
+    let t = 0
+    let maxT = 500 / 10
+    timer = setInterval(() => {
+      t++
+      if (t >= maxT) {
+        clearInterval(timer)
+        resolve(timer)
+      }
+      let offsetY = parseInt(cubicEaseOut(t, start, offset, maxT))
+      /* eslint-disable no-compare-neg-zero */
+      if (offsetY === -0) {
+        offsetY = 0
+      }
+      fn && fn(offsetY)
+    }, 10)
+  })
+}
+
+function cubicEaseOut (t, b, c, d) {
+  return -c * ((t = t / d - 1) * t * t * t - 1) + b
+}
+
+
+async function setAutoStart () {
+  const autostart = await settings.get('parameters.autostart')
+  try {
+    app.setLoginItemSettings({
+      name: 'Dash - Launcher',
+      openAtLogin: JSON.parse(JSON.stringify(autostart))
+    })
+  } catch(err) {
+    console.log(err)
+  }
+}
+async function createShortcut () {
+  globalShortcut.unregisterAll()
+  const shortcut = await settings.get('parameters.trigger')
+  console.log(shortcut)
+  globalShortcut.register(JSON.parse(JSON.stringify(shortcut)), () => {
+    if (win.isVisible()) {
+      
+      win.hide()
+      
+      
+      console.log('pressed and hide')
+    } else {
+      win.show()
+      win.focus()
+      console.log('pressed and open')
+    }
+  })
 }
 
 if (!singleInstance) {
@@ -262,85 +351,67 @@ if (!singleInstance) {
     win.show()
     win.focus()
   })
-
   // Create windows, load the rest of the app, etc...
   app.whenReady().then(() => {
     createSplashWindow()
-
+    new DiscordHandler()
+    //ipcRenderer.send('appVersion', app.getVersion())
     const ipcRegister = new IpcRegister(ipcMain)
     ipcRegister.registerOn()
-    
-    
-    
-    tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
-    const contextMenu = Menu.buildFromTemplate([
-      { label: "En ligne", click () { userStatus = "online" }, icon: iconStatus.online },
-      { label: "Ne pas déranger", click () { userStatus = "busy" }, icon: iconStatus.busy },
-      { label: "Inactif", click () { userStatus = "afk" }, icon: iconStatus.afk },
-      { label: "Hors ligne", click () { userStatus = "offline" }, icon: iconStatus.offline },
-      { type: 'separator' },
-      { label: "Ouvrir l'application", click () { win.show() } },
-      { label: 'Options', click () { winSettings.show() } },
-      { label: 'Quitter', click () { app.quit() } }
-    ])
-    tray.on('double-click', function() {
-      win.show()
-    })
-    tray.setContextMenu(contextMenu)
-   
-  }).then(() => {
-    if(splash.isVisible()) {
-      log.warn(process.env.APPDATA + '..\\local\\dash\\pending')
-      setTimeout(() => {
-        autoUpdater.checkForUpdates();
-      }, 3000)
 
+    
+  }).then(() => {
+    if (splash.isVisible()) {
+      setTimeout(() => {
+        // Check la différence entre checkForUpdates & AndNotify (Apparemment, AndNotify throw a notification windows)
+        if(isDevelopment){ autoUpdater.checkForUpdates() } 
+        else { autoUpdater.checkForUpdatesAndNotify() }
+      }, 3000)
       autoUpdater.on('checking-for-update', () => {
-        sendStatusToWindow('Chargement...');
+        sendStatusToWindow(splash, 'Chargement...')
       }).on('update-available', (info) => {
-        sendStatusToWindow('Mise à jour trouvée.');
+        sendStatusToWindow(splash, 'Mise à jour trouvée.')
         setTimeout(() => {
-          sendStatusToWindow('Analyse des données.');
-          splash.webContents.send('updateFound', true);
-        },1000)
+          sendStatusToWindow(splash, 'Analyse des données.')
+          splash.webContents.send('updateFound', true)
+        }, 1000)
       }).on('update-not-available', (info) => {
-        sendStatusToWindow('Préparez-vous au lancement !');
-        createWindow()
-        createWindowSettings()
+        sendStatusToWindow(splash, 'Préparez-vous au lancement !')
+        createTray()
         setTimeout(() => {
           splash.close()
         }, 1000)
       }).on('error', (err) => {
-        sendStatusToWindow(err);
-        splash.webContents.send('UpdaterError', true);
-        createWindow()
-        createWindowSettings()
-        // setTimeout(() => {
-        //   splash.close()
-        // }, 2000)
+        sendStatusToWindow(splash, err)
+        splash.webContents.send('UpdaterError', true)
       }).on('download-progress', (progressObj) => {
-        let log_message = "Download speed: " + progressObj.bytesPerSecond;
-        log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-        log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
-        sendStatusToWindow('Téléchargement en cours...');
-        sendSpeedDownload(progressObj.bytesPerSecond)
-        sendPercentageDownload(progressObj.percent)
-      }).on('update-downloaded', (info) => {
-        console.log('Téléchargement terminé');
-        sendStatusToWindow('Téléchargement terminé');
-        autoUpdater.quitAndInstall(true, true);
-        splash.webContents.send('downloadFinish', true);
-      });
-      
-    }
-  }) 
-}
+        // Debug - show in console (Electron) the progression
+        let log_message = 'Download speed: ' + progressObj.bytesPerSecond
+        log_message = log_message + ' - Downloaded ' + progressObj.percent + '%'
+        log_message = log_message + ' (' + progressObj.transferred + '/' + progressObj.total + ')'
+        log.warn(log_message)
 
+        sendStatusToWindow(splash, 'Téléchargement en cours...')
+        sendSpeedDownload(splash, progressObj.bytesPerSecond)
+        sendPercentageDownload(splash, progressObj.percent)
+      }).on('update-downloaded', (info) => {
+        console.log('Téléchargement terminé')
+        sendStatusToWindow(splash, 'Téléchargement terminé')
+        setTimeout(() => {
+          sendStatusToWindow(splash, "L'application redémarrera tout seul.")
+          setTimeout(() => {
+            autoUpdater.quitAndInstall(true, true)
+          }, 2000)
+        }, 1000)
+        splash.webContents.send('downloadFinish', true)
+      })
+    }
+  })
+}
 
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  disconnectDiscord()
   if (process.platform !== 'darwin') {
     app.quit()
   }
@@ -353,7 +424,6 @@ app.on('activate', () => {
 })
 
 app.on('ready', async () => {
-  
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
@@ -362,7 +432,6 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  
 })
 
 if (isDevelopment) {
@@ -379,129 +448,4 @@ if (isDevelopment) {
   }
 }
 
-// Get current window active 
-// const {ProcessListen, getWindows} = require("active-window-listener");
-// const listener = new ProcessListen(["Discord.exe", "Overwatch.exe", "Code.exe"]);
-// listener.changed(data => {
-// 	console.log("Active: ", data)
-// })
-// getWindows().forEach(w => {
-// 	w.getExif().then(tags => {console.log(tags.FileDescription)})
-// })
-
-
-
-// Set this to your Client ID.
-
-const clientId = '847459425585201182';
-const scopes = ['rpc'];
-let discordTimer;
-let discordConnextionTimer;
-let rpc = null;
-let gameName_;
-let tryToConnect = 0;
-DiscordRPC.register(clientId);
-
-function connectDiscord() {
-  if (!rpc || rpc === null) rpc = new DiscordRPC.Client({ transport: 'ipc' });
-  rpc.login({ clientId }).catch((error: string) => {
-    console.error(error);
-    console.debug('[RPC] Error: Make sure Discord client is available and you are connected to the Internet');
-    rpc = null
-    if(tryToConnect <= 5) {
-      clearInterval(discordConnextionTimer);
-    }
-    discordConnextionTimer = setInterval(() => {
-      tryToConnect++
-      connectDiscord()
-    }, 15e3);
-    
-  });
-  rpc.on('ready', () => {
-    console.debug('Discord Client ready');
-    clearInterval(discordConnextionTimer);
-    setActivity();
-    discordTimer = setInterval(() => {
-        setActivity().catch((e: string) => console.error(`Failed to update Discord status. ${e}`));
-    }, 10e3);
-  });
-}
-
-
-
-function disconnectDiscord() {
-    rpc.clearActivity();
-    clearInterval(discordTimer);
-    rpc.destroy();
-    rpc = null
-}
-
-//const activeWindow = require('active-win');
-
-async function updateStatusMessage() {
-  //let processID;
-  //await activeWindow().then(data => { processID = data })
-  //console.log(processID)
-
-  let appStatus = "none" 
-  if(userStatus === "online") {
-    appStatus = "playing"
-  } else if (userStatus === "busy") {
-    appStatus = "playingbusy"
-  } else if (userStatus === "afk"){
-    appStatus = "playingafk"
-  } else {
-    appStatus = "none"
-  }
-  
-  // if(processID.title.includes(gameName_)) {
-  //   const data = { play : appStatus, message : `Joue à : ${processID.title || 'rien'}`, game: true}
-  //   return data
-  // } else if(win.isVisible()) {
-  //   const data = { play : "idle", message : "Ah, il veut jouer ?", game: false}
-  //   return data
-  // } else if(processID.owner.name.includes("Code.exe")) {
-  //   const data = { play : "coding", message : "Entrain de coder, bruh", game: false}
-  //   return data
-  // } else {
-  //   const data = { play : "none", message : `Joue a la Licorne`, game: false}
-  //   return data
-  // }
-  const data = { play : appStatus, message : `Joue a la Licorne`, game: true}
-  return data
-}
-
-
-ipcMain.on('game_launch',function(event, data) {
-  console.log('Game ' + data + ' launched') 
-  gameName_ = data
-  updateStatusMessage()
-})
-
-async function setActivity() {
-  if (!rpc || !win) {
-    return;
-  }
-  const StatusLol = await updateStatusMessage()
-  if(StatusLol.game) {
-    //const startTimestamp = Date.now();
-    rpc.setActivity({
-      details: StatusLol.message,
-      //startTimestamp,
-      largeImageKey: 'dashou',
-      largeImageText: 'Dash - Launcher',
-      smallImageKey: StatusLol.play,
-      instance: false,
-    });
-  } else {
-    rpc.setActivity({
-      state: StatusLol.message,
-      largeImageKey: 'dashou',
-      largeImageText: 'Dash - Launcher',
-      smallImageKey: StatusLol.play,
-      instance: false,
-    });
-  }
-}
-
-
+export { win, userStatus }

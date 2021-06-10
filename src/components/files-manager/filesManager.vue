@@ -85,7 +85,6 @@ import Modal from '@/widgets/Dialog.widget.vue'
 const electron = window.require ? window.require('electron') : null
 const { shell } = require('electron')
 const homeDir = require('os').homedir()
-
 export default {
   name: 'Home',
   components: {
@@ -134,6 +133,7 @@ export default {
       this.$store.dispatch('FOLDERS', resObj.folders)
       this.category = resObj
       this.initFolder()
+      
     },
     closeAndGo () {
       if (this.rootdir !== 0) {
@@ -154,9 +154,8 @@ export default {
           this.errorMessage = "Nous ne parvernons pas à trouver vos données, il semblerait que votre racine soit vide ou n'existe pas."
           this.newUserModal = true
         }
-      }, 200)
+      }, 500)
      
-
       
     },
     openDocument (value) {
@@ -184,7 +183,6 @@ export default {
   box-sizing: border-box;
   z-index: 1;
 }
-
 .addRoute {
   padding: 15px 24px;
   border-radius: 5px;
@@ -204,5 +202,4 @@ export default {
   margin: 0;
   //overflow: auto; // TODO : Afficher un scroll factice pour scroll dans la navigation , eventListener scroll souris pour scroll normal
 }
-
 </style>

@@ -6,9 +6,26 @@ function fnCreateSingleNode (fileInfo) {
   fileInfo.fileName = fileInfo.fileName.substring(0, fileInfo.fileName.length - 4);
   // get file mime type
   const mimeType = mime.lookup(nodeKey)
+  const meta = {
+    app_name: "",
+    background: "background-image: url('')",
+    categories: [],
+    cover:"",
+    description: "",      
+    tags: [],
+    video:"",
+  }
   // create object
   return {
     id: nodeKey,
+    origin: 'local',
+    exec: fileInfo.fileName,
+    game: meta,
+    analytic: {
+      played: 0,
+      stat: [],
+      launched: 0
+    },
     name: fileInfo.fileName,
     label: fileInfo.fileName,
     nodeKey: nodeKey,
@@ -16,7 +33,7 @@ function fnCreateSingleNode (fileInfo) {
     tickable: true,
     lazy: true,
     children: [],
-    origin: 'local',
+    
     data: {
       rootDir: fileInfo.rootDir,
       isDir: fileInfo.isDir,

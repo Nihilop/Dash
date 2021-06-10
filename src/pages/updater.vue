@@ -7,105 +7,129 @@
       <span class="title">H</span>
     </div>
     <div class="loading">
-      <img class="logo" src="img/iconSplash.png" />
-      <p id="version">V. {{appVersion}}</p>
+      <img
+        class="logo"
+        src="img/iconSplash.png"
+      >
+      <p id="version">
+        V. {{ appVersion }}
+      </p>
       <div class="content">
-        <div class="loginfo" id="messages">{{message}}</div>
-        <div id="quitAndInstall" class="btn-group updatePrompt">
-          <!-- <button id="accept" class="accept" @click="quitAndInstall">Installer</button> -->
-          <button id="cancel" class="cancel" @click="cancelUpdate">Annuler</button>
+        <div
+          id="messages"
+          class="loginfo"
+        >
+          {{ message }}
         </div>
-        <progress  id="downloadProgress" class="updateAvalaible"></progress>
-        <p id="speed" class="dlSpeed updateAvalaible"></p>
+        <div
+          id="quitAndInstall"
+          class="btn-group updatePrompt"
+        >
+          <!-- <button id="accept" class="accept" @click="quitAndInstall">Installer</button> -->
+          <button
+            id="cancel"
+            class="cancel"
+            @click="cancelUpdate"
+          >
+            Annuler
+          </button>
+        </div>
+        <progress
+          id="downloadProgress"
+          class="updateAvalaible"
+        />
+        <p
+          id="speed"
+          class="dlSpeed updateAvalaible"
+        />
       </div>
     </div>
   </div>
 </template>
 <script>
-import { ipcRenderer} from 'electron'
+import { ipcRenderer } from 'electron'
 
-function formatBytes(bytes, decimals = 2) {
-  if (bytes === 0) return '0 Bytes';
+function formatBytes (bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes'
 
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes /s', 'KB /s', 'MB /s', 'GB /s', 'TB /s', 'PB /s', 'EB /s', 'ZB /s', 'YB /s'];
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['Bytes /s', 'KB /s', 'MB /s', 'GB /s', 'TB /s', 'PB /s', 'EB /s', 'ZB /s', 'YB /s']
 
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
 export default {
-  name: "updater",
-  data() {
+  name: 'Updater',
+  data () {
     return {
       appVersion: null,
-      message: "Chargement...",
+      message: 'Chargement...',
       progressValue: 0,
       dlSpeed: null,
       updateAvailable: false,
       updateDownloaded: false
     }
   },
-  created() {
-    ipcRenderer.send('app_version');
+  created () {
+    ipcRenderer.send('app_version')
     ipcRenderer.on('app_version', (event, arg) => {
-      ipcRenderer.removeAllListeners('app_version');
-      this.appVersion = arg.version;
+      ipcRenderer.removeAllListeners('app_version')
+      this.appVersion = arg.version
       console.log(arg.version)
-    });
+    })
   },
-  mounted() {
+  mounted () {
     this.$nextTick(function () {
-      const progress = document.getElementById("downloadProgress")
-      const buttonInstall = document.getElementById("quitAndInstall")
-      const message = document.getElementById('messages');
-      const speed = document.getElementById("speed")
-      const promptUpdate = document.getElementById("updateBtn")
+      const progress = document.getElementById('downloadProgress')
+      const buttonInstall = document.getElementById('quitAndInstall')
+      const message = document.getElementById('messages')
+      const speed = document.getElementById('speed')
+      const promptUpdate = document.getElementById('updateBtn')
 
-      ipcRenderer.on('message', function(event, text) {
+      ipcRenderer.on('message', function (event, text) {
         console.log(text)
-        message.innerHTML = text;
+        message.innerHTML = text
       })
 
-      ipcRenderer.on('updateFound', function(event) {
-        promptUpdate.style.display = "block"
+      ipcRenderer.on('updateFound', function (event) {
+        promptUpdate.style.display = 'block'
       })
 
-      ipcRenderer.on('speed', function(event, text) {
+      ipcRenderer.on('speed', function (event, text) {
         console.log(text)
         speed.innerHTML = formatBytes(text)
       })
 
-      ipcRenderer.on('UpdaterError', function(event) {
-        buttonInstall.style.display = "block"
+      ipcRenderer.on('UpdaterError', function (event) {
+        buttonInstall.style.display = 'block'
       })
 
-      ipcRenderer.on('percentage', function(event, text) {
+      ipcRenderer.on('percentage', function (event, text) {
         console.log(text / 1000)
-        progress.style.display = "block"
-        progress.value = text / 100;
+        progress.style.display = 'block'
+        progress.value = text / 100
       })
-      ipcRenderer.on('downloadFinish', function(event) {
+      ipcRenderer.on('downloadFinish', function (event) {
         console.log(event)
-        progress.style.display = "none"
-        //buttonInstall.style.display = "block"
-        speed.style.display = "none"
+        progress.style.display = 'none'
+        // buttonInstall.style.display = "block"
+        speed.style.display = 'none'
       })
-    });
-    
+    })
   },
   methods: {
-    quitAndInstall() {
+    quitAndInstall () {
       ipcRenderer.send('launchInstall')
     },
-    acceptUpdate() {
+    acceptUpdate () {
       ipcRenderer.send('acceptUpdate')
     },
-    cancelUpdate() {
+    cancelUpdate () {
       ipcRenderer.send('cancelUpdate')
-    },
+    }
   }
 }
 </script>
@@ -119,20 +143,21 @@ export default {
     body, html {
       background: transparent;
       overflow: hidden;
-      
+
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      overflow: hidden;
     }
     .wrapper {
       position: relative;
       overflow: hidden;
       border-radius: 5px;
       background: linear-gradient( 135deg ,  rgb(14, 22, 26) 0%,  rgb(38, 59, 66) 100%);
-      
+
       width: 100%;
       height: 100%;
     }
@@ -156,7 +181,7 @@ export default {
         &.cancel {
           background: linear-gradient(to right, rgba(#fd1d55, 50%) 0%, rgba(#c91743, 100%) 100%);
         }
-        &:hover{ 
+        &:hover{
           transform: scale(1.1);
         }
       }
@@ -215,7 +240,7 @@ export default {
     }
     #progress, #speed {
       opacity: 0;
-      
+
     }
     .updateAvalaible {
       animation: opacityShow 0.8s ease-in-out;

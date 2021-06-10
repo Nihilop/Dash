@@ -135,11 +135,9 @@ export default defineComponent({
   },
   setup () {
     const isActive = ref(null)
-
     function isLoaded () {
       isActive.value = true
     }
-
     return {
       isLoaded,
       isActive
@@ -195,7 +193,6 @@ export default defineComponent({
     async setFavList () {
       const allItems = await this.indexDb.getAll(this.dbTbName)
       const allKeys = await this.indexDb.getAllKeys(this.dbTbName)
-
       this.$store.dispatch('FAV_LIST', allItems)
       this.$store.dispatch('FAV_KEYS', allKeys)
     },
@@ -225,7 +222,6 @@ export default defineComponent({
 })
 </script>
 <style lang="scss" scoped>
-
 @import '@/assets/style/global.scss';
 .scrollableNav {
   height: auto;
@@ -240,11 +236,9 @@ export default defineComponent({
   label {
     display: flex;
     font-weight: 200;
-    color: rgba(white, 100%);
     padding: 15px 0;
     cursor:default;
     text-transform: uppercase;
-
     font-size: 1.1em;
     h1 {
       display: block;
@@ -286,10 +280,8 @@ export default defineComponent({
     text-align: left;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-    color: $white;}
+    white-space: nowrap;}
 }
-
 .v-contextmenu-item {
   padding: 5px 15px;
 }

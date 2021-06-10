@@ -1,16 +1,23 @@
 @import "reset.scss";
 @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css");
 
+:root {
+  --dark: #FFFFFF;
+  --light: #131313;
+}
+
 $grid-min: 14rem;
 $grid-gap: 22px;
 $selectColor: hsl(204, 70%, 53%); // hsla(24, 99%, 59%, 1)
-$background: hsla(191, 40%, 8%, 1);
+$background: #222;
+$detailsOverlay: #181818;
 $muted: hsla(120, 24%, 94%, 1);
 $white: hsla(180, 14%, 97%, 1);
 $principal: $selectColor;
-$detailsBG: lighten($background, 7%);
+$detailsBG: $background;
 $secondary: hsla(219, 8%, 53%, 1);
 $accept : #27ae60;
+$theme: --dark;
 
 body, html {
   font-family: 'Cabin', sans-serif;
@@ -22,18 +29,21 @@ body, html {
   height: 100%;
   margin: 0 !important;
   padding: 0 !important;
+  -webkit-font-smoothing: subpixel-antialized;
   overflow: hidden;
-  background: linear-gradient( 135deg , rgba(26, 42, 48, 0.40) 0%, rgba(26, 42, 48, 0.70) 100%);
+  //background: linear-gradient( 135deg , rgba(26, 42, 48, 0.40) 0%, rgba(26, 42, 48, 0.70) 100%);
   // &:before {
   //   content: '';
   //   width: 100%;
   //   height: 100%;
   //   position:absolute;
   //   top: 0; left: 0;
-  //   background: linear-gradient( 135deg , rgba(26, 42, 48, 0.40) 0%, rgba(26, 42, 48, 0.60) 33%, rgba(26, 42, 48, 0.70) 66%, rgba(26, 42, 48, 0.70) 100%);
-  //   background-size: 200% 200%;
-	//   animation: gradient 40s ease infinite;
+  //   background: var(--light);
+  //   opacity: 0.4;
   // }
+}
+p, a, h1, h2, h3, h4, span, i {
+  color:var(--dark)
 }
 @media (max-width: 960px) {
   body, html {

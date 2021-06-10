@@ -1,12 +1,12 @@
 <template>
   <teleport to="body">
-    <transition name="fade">
+    <transition name="fade-top">
       <div
         v-show="modelValue"
         v-bind="$attrs"
         ref="modalRef"
         class="bk-modal-detail-mask"
-        :style="{ cursor: closableMask ? 'pointer' : 'default' }"
+        :style="[{ cursor: closableMask ? 'pointer' : 'default'}, datas.game.background ? datas.game.background : null ]"
       >
         <transition name="drop-top">
           <div
@@ -68,6 +68,7 @@ export default defineComponent({
   name: 'Modal',
   inheritAttrs: false,
   props: {
+    datas: Object,
     modelValue: { type: Boolean, default: false },
     width: { type: String, default: '500px' },
     closableMask: { type: Boolean, default: true },
@@ -135,10 +136,21 @@ export default defineComponent({
     top: 0;
     width: 100%;
     height: 100vh;
-    background: linear-gradient( to bottom , rgba($background, 0.80) 0%, rgba(2, 3, 3, 0.80) 100%);
-    z-index: 99999;
+    z-index: 9999;
     overflow-y: scroll;
+    background-size: cover;
+    &:after {
+      position:fixed;
+      content:'';
+      top:0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: $detailsOverlay;
+      mask-image: radial-gradient(at top right,  rgba(0, 0, 0,0.8) 0%,  rgba(0, 0, 0, 1) 60%);
+      z-index: -1;
+    }
   }
+
 
   &-wrap {
     height: 100vh;
@@ -146,6 +158,7 @@ export default defineComponent({
     overflow-y: scroll;
     display: table;
     transition-delay: 0.05s;
+    
 
     &-inner {
       display: flex;
@@ -164,11 +177,13 @@ export default defineComponent({
     border-radius: 5px;
     outline: none;
     //box-shadow: @popup-shadow;
-    background: $detailsBG;
+    //background: $detailsBG;
     cursor: default;
     display: table;
     width: 100%;
+    min-height: 100%;
     text-align: center;
+    z-index: 99999;
 
     > img {
       max-width: 100% !important;
@@ -249,6 +264,7 @@ export default defineComponent({
     min-height: 400px;
     font-family: "Segoe UI", sans-serif;
     padding: 0;
+    border-radius: 5px;
     overflow: hidden;
     .headerBG {
       position:absolute;
@@ -261,6 +277,8 @@ export default defineComponent({
       .videoCover {
         position:absolute;
         width:100%;
+        min-height: 100%;
+        background: $detailsBG;
         height: auto;
         top:0; left:0;
       }
@@ -270,8 +288,8 @@ export default defineComponent({
       }
       .coverGame {
         position:absolute;
-        bottom: 0;
-        left:0;
+        bottom: 5%;
+        left:2%;
         width: 100%;
         z-index: 999;
 
@@ -349,7 +367,7 @@ export default defineComponent({
         content: '';
         width:100%;
         height: 100%;
-        background: linear-gradient(to top,  $detailsBG 5%, rgba($detailsBG, 30%) 60%, $detailsBG 100%);
+        background: linear-gradient(to bottom,  rgba($detailsBG, 40%) 40%, $detailsBG 100%);
         z-index: 1;
         bottom: 0;
         left: 0;
@@ -367,6 +385,7 @@ export default defineComponent({
     overflow: auto;
     color: #a5c1cc;
     text-align: left;
+    line-height: normal;
     h2 {
       font-weight: 800;
       font-size: 1.5em;

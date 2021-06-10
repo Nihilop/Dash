@@ -1,3 +1,5 @@
+  
+const path = require('path')
 module.exports = {
   pluginOptions: {
     electronBuilder: {
@@ -10,7 +12,20 @@ module.exports = {
         win: {
           icon: "./build/icons/icon.ico"
         }
-      }
+      },
+      externals: ["active-window-listener"],
+      asar: true,
+      // asarUnpack: [
+      //   "node_modules/active-window-listener",
+      // ],
+      chainWebpackMainProcess: (config) => {
+        config.module
+          .rule("node")
+          .test(/\.node$/)
+          .use("node-loader")
+          .loader("node-loader")
+          .end();
+      },
     },
     autoRouting: {
       chunkNamePrefix: 'page-'
@@ -18,6 +33,5 @@ module.exports = {
   },
   lintOnSave: false,
   assetsDir: 'assets/',
-  runtimeCompiler: true  
+  runtimeCompiler: true
 }
-

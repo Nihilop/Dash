@@ -86,11 +86,11 @@ const filesManager = defineAsyncComponent({
   loadingComponent: Loading,
   errorComponent: ErrorComponent
 })
-// const empty = defineAsyncComponent({
-//   loader: () => import('@/components/empty/empty'),
-//   loadingComponent: Loading,
-//   errorComponent: ErrorComponent,
-// })
+const gamesShops = defineAsyncComponent({
+  loader: () => import('@/components/games-shops/gamesShops'),
+  loadingComponent: Loading,
+  errorComponent: ErrorComponent,
+})
 const gamesLauncher = defineAsyncComponent({
   loader: () => import('@/components/games-launcher/gamesLauncher.vue'),
   loadingComponent: Loading,
@@ -103,7 +103,7 @@ export default defineComponent({
     Clock,
     Loading,
     filesManager,
-    // empty,
+    gamesShops,
     gamesLauncher
   },
   data () {
@@ -115,7 +115,8 @@ export default defineComponent({
       },
       extensions: [
         { id: 0, name: 'Lanceur de jeux', component: 'games-launcher', notification: false, icon: 'bi-controller' },
-        { id: 1, name: 'Files manager', component: 'files-Manager', notification: false, icon: 'bi-file-earmark-binary-fill' }
+        { id: 1, name: 'Files manager', component: 'files-Manager', notification: false, icon: 'bi-file-earmark-binary-fill' },
+        { id: 2, name: 'Jeux gratuits', component: 'games-shops', notification: false, icon: 'bi-controller'}
       ]
     }
   },

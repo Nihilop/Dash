@@ -117,7 +117,7 @@ export default defineComponent({
   background:none;
   border: none;
   outline: none;
-  color: rgba(255,255,255,0.2);
+  opacity: 0.2;
   margin: auto auto auto 10px;
   font-size: 1.5em;
   cursor: pointer;
@@ -128,7 +128,7 @@ export default defineComponent({
     }
   }
   &:hover {
-    color:white;
+    opacity: 1;
   }
 }
 </style>
