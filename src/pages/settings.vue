@@ -10,6 +10,7 @@
       />
     </header>
     <section class="contents scrollable">
+      <n-select v-model:value="shortcut" :options="shortcuts" />
       <form>
         <h1>Configuration de l'utilisateur</h1>
         <div class="group">
@@ -108,37 +109,43 @@
           </option>
         </select>
       </form>
+      
       <div class="wrapperBtn">
-        <button
-          class="btn save"
-          @click="save"
-        >
-          Sauvegarder
-        </button>
-        <button
-          class="btn cancel"
-          @click="closeApp"
-        >
-          Fermer
-        </button>
+        <div class="btnGroup">
+          <button class="uk-button uk-button-primary save" @click="save">Sauvegarder</button>
+          <button class="uk-button uk-button-danger" @click="closeApp">Annuler</button>
+        </div>
       </div>
     </section>
   </div>
 </template>
 
 <script>
-
 const electron = window.require ? window.require('electron') : null
+import { NSelect } from 'naive-ui'
 import settings from 'electron-settings';
 export default {
   name: 'Settings',
+  components: {
+    NSelect
+  },
   data () {
     return {
       nickname: '',
       startup: false,
       playingGame: true,
       shortcut: '',
-      shortcuts: ['Ctrl+G', 'Ctrl+H'],
+      shortcuts: [
+        {
+          label: "Ctrl+G",
+          value: 'Ctrl+G',
+          disabled: false
+        },
+        {
+          label: "Ctrl+H",
+          value: 'Ctrl+H',
+          disabled: false
+        }],
       customStatus: '',
       refreshStatusTime: { time: null, value: "" },
       refreshStatusVal: [
@@ -347,47 +354,21 @@ input[type=text].inputed {
   position: sticky;
   display: flex;
   bottom: 20px;
-  width: 100%;
-  height: 55px;
-  justify-content: center;
-  vertical-align: center;
+  width:100%;
+  margin:0; 
+  right:0;
   pointer-events: none;
-
-  button.btn {
-    width: 150px;
-    height: 40px;
-    border: none;
-    outline: none;
-    pointer-events:visible;
-    font-size: 13px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    transition: 0.4s all;
-    cursor: pointer;
-    border-radius: 3px;
-    color: white;
-
+  .btnGroup {
+    display: flex;
+    margin: auto 0 auto auto;
+    width:fit-content;
+  }
+  button { 
+    margin: auto 0 auto 10px;
+    pointer-events: all;
+    height: 100%;
     &.save {
-      margin: auto 10px auto auto;
-      background: rgba(46, 204, 113, 1);
-
-      &:hover {
-        background: lighten(rgba(46, 204, 113, 1), 10%)
-      }
-    }
-
-    &.cancel {
-      margin: auto 10px auto 0;
-      background: rgba(243, 106, 99, 1);
-
-      &:hover {
-        background: lighten(rgba(243, 106, 99, 1), 10%)
-      }
-    }
-
-    &:hover {
-      animation: pulse 2.4s ease infinite;
-      transition: 0.4s all;
+      background:rgba(46, 204, 113, 1)
     }
   }
 }
