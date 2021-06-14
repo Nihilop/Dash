@@ -78,13 +78,15 @@
 </template>
 
 <script>
+
+const electron = window.require ? window.require('electron') : null
+const { shell } = require('electron')
+const homeDir = require('os').homedir()
 import Grid from '@/components/files-manager/Layouts/Grid.vue'
 import List from '@/components/files-manager/Layouts/List.vue'
 import Sidebar from '@/components/files-manager/Layouts/Sidebar.vue'
 import Modal from '@/widgets/Dialog.widget.vue'
-const electron = window.require ? window.require('electron') : null
-const { shell } = require('electron')
-const homeDir = require('os').homedir()
+
 export default {
   name: 'Home',
   components: {

@@ -401,7 +401,7 @@ import eGraph from '@/widgets/echarts.widget'
 const scraper = require('@/lib/steamScraper')
 const fs = require('fs')
 const electron = window.require ? window.require('electron') : null
-const { shell, Notification  } = require('electron')
+const { shell } = require('electron')
 
 
 /* eslint-disable no-alert, no-console */
@@ -957,8 +957,7 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/assets/style/global.scss';
-@import url('https://fonts.googleapis.com/css2?family=Paytone+One&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;900&display=swap');
+
 $background: #222129;
 $card: rgba(white, 5%);
 $spotify-green: rgb(30, 215, 96);

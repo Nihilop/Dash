@@ -10,7 +10,7 @@ import settings from 'electron-settings';
 import {sendStatusToWindow, sendSpeedDownload, sendPercentageDownload} from './utils/updateSender'
 const unhandled = require('electron-unhandled');
 const log = require('electron-log')
-//const { setVibrancy } = require('electron-acrylic-window')
+const { setVibrancy } = require('electron-acrylic-window')
 const acrylicWindow = require('electron-acrylic-window').BrowserWindow
 const { autoUpdater } = require('electron-updater')
 
@@ -60,8 +60,8 @@ async function init() {
       userStatus: 'Online',
       customStatus: "Je suis une licorne !",
       refreshStatusTime: { time: 5e3, value: "5s, Ok normal" },
-      theme_selected: 'dark',
-      boxed: true
+      boxed: true,
+      windows_color: '#202425E6'
     });
   }
 }
@@ -111,6 +111,7 @@ function createSplashWindow () {
 
   return splash
 }
+
 function createTray() {
   createWindow()
   tray = new Tray(iconTray.resize({ width: 32, height: 32 }))
@@ -151,42 +152,41 @@ function createWindowSettings () {
     console.log('close clicked')
     winSettings.close()
   })
-  ipcMain.on('saveSettings', () => {
+  ipcMain.on('saveSettings', (event, arg) => {
     console.log('save clicked')
     winSettings.close()
+    setVibrancy(win, arg)
     setAutoStart()
     createShortcut()
+    win.reload()
     //app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) }) 
     //app.exit(0)
   })
-
+  ipcMain.on('saveSettingsWithReboot', (event, arg) => {
+    console.log('save clicked')
+    
+    setVibrancy(win, arg)
+    setAutoStart()
+    createShortcut()
+    app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) }) 
+    app.exit(0)
+  })
   return winSettings
 }
 async function createWindow () {
   // Create the browser window.
   
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
-  const themeSelected = await settings.get('parameters.theme_selected')
   const getBoxed = await settings.get('parameters.boxed')
-  log.warn('Le theme est: ' + themeSelected)
+
 
   if(isWindows10) {
-    if(themeSelected === 'dark') {
-      theme = {
-        theme: '#202425E6',
-        effect: 'acrylic',
-        useCustomWindowRefreshMethod: true,
-        disableOnBlur: true,
-        debug: true 
-      }
-    } else {
-      theme = {
-        theme: '#EEEEEE44',
-        effect: 'acrylic',
-        useCustomWindowRefreshMethod: true,
-        disableOnBlur: true,
-        debug: true 
-      }
+    theme = {
+      theme: await settings.get('parameters.windows_color') || '#202425E6',
+      effect: 'acrylic',
+      useCustomWindowRefreshMethod: true,
+      disableOnBlur: true,
+      debug: true 
     }
   } else {
     theme = 'light'

@@ -29,7 +29,8 @@ export default createStore({
     listType: 'ListView',
     currentTitle: 'MyPC',
     isAbout: false,
-    sidebar: false
+    sidebar: false,
+    theme_dark: null,
   },
   mutations: {
     setDrives (state, drives) {
@@ -92,6 +93,9 @@ export default createStore({
     },
     setSidebar (state, sidebar) {
       state.sidebar = sidebar
+    },
+    setTheme ( state, themedark) {
+      state.theme_dark = themedark
     }
 
   },
@@ -146,6 +150,9 @@ export default createStore({
     },
     SHOW_SIDEBAR (context, payload) {
       context.commit('setSidebar', payload)
+    },
+    SET_THEME (context, payload) {
+      context.commit('setTheme', payload)
     }
   },
   modules: {}

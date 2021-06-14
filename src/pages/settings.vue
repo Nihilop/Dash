@@ -1,6 +1,6 @@
 <template>
-  <div class="settings">
-    <header class="winbar">
+  <div class="settings" :class="isDarkness ? 'dark' : 'light'">
+    <header class="winbar" :class="isDarkness ? 'dark' : 'light'">
       <h1 class="windowTitle">
         Paramètres d'application
       </h1>
@@ -10,131 +10,123 @@
       />
     </header>
     <section class="contents scrollable">
-      <n-select v-model:value="shortcut" :options="shortcuts" />
-      <form>
-        <h1>Configuration de l'utilisateur</h1>
-        <div class="group">
-          <input
-            v-model="nickname"
-            class="inputed"
-            name="one"
-            type="text"
-          >
-          <label
-            class="labeler"
-            for="one"
-            :class="nickname != '' ? 'notEmpty' : null"
-          >Nom d'utilisateur</label>
-        </div>
-        <h1>Discord Rich presence</h1>
-        <div class="group">
-        <input
-            v-model="playingGame"
-            class="inputed"
-            name="play"
-            type="checkbox"
-          >
-          <label
-            class="labeler"
-            for="play"
-          >Montrer le jeu que tu joues ? </label>
-        </div>
+      <n-form style="padding-bottom: 50px">
+        <n-space item-style="display: flex;" vertical>
+          <n-divider title-placement="left">
+            <n-icon>
+              <Apps />
+            </n-icon>
+            <p style="margin-left:5px">Paramètres globaux</p>
+          </n-divider>
+          <n-form-item label="Nom d'utilisateur" style="width:100%">
+            <n-input v-model:value="nickname" type="input" size="large" placeholder="Pseudo..." >
+              <template #prefix>
+                <n-icon>
+                  <person />
+                </n-icon>
+              </template>
+            </n-input>
+          </n-form-item>
+          <n-form-item label="Raccourci clavier" style="width:100%">
+            <n-select v-model:value="shortcut" :options="shortcuts" size="large"/>
+          </n-form-item>
+          <n-form-item label="Theme" style="width:100%">
+            <n-select v-model:value="windows_color" :options="themes" size="large"/>
+          </n-form-item>
+          <n-form-item label="Ou alors choisi ta couleur !">
+            <n-color-picker v-model:value="windows_color" :modes="['hex']"/>
+          </n-form-item>
+          
+          <n-checkbox
+            v-model:checked="startup"
+            label="Lancer l'application au démarrage de windows ?"
+          />
+          <n-checkbox
+            v-model:checked="appBoxed"
+            label="Ouvrir l'application en mode boite ? (Redémarrage de l'application nécessaire)"
+          />
+          <n-divider title-placement="left">
+            <n-icon>
+              <logo-discord />
+            </n-icon> <p style="margin-left:5px">Paramètres Discord</p>
+          </n-divider>
+          
+          <n-form-item label="Personnaliser le statut Discord" style="width:100%">
+            <n-input v-model:value="customStatus" type="input" size="large" placeholder="Statut discord personnalisé...">
+              <template #prefix>
+                <n-icon>
+                  <logo-discord />
+                </n-icon>
+              </template>
+            </n-input>
+          </n-form-item>
+          <n-checkbox
+            v-model:checked="playingGame"
+            label="Montrer à quoi tu joues ?"
+          />
+        </n-space>
+      </n-form>
 
-        <p style="padding-bottom:0px ">L'actualisation du statut peut prendre un certain delais que je compte réduire à l'avenir, merci de votre compréhension</p>
-        
-
-        <div class="group">
-          <input
-            v-model="customStatus"
-            class="inputed"
-            name="one"
-            type="text"
-          >
-          <label
-            class="labeler"
-            for="one"
-            :class="customStatus != '' ? 'notEmpty' : null"
-          >Définir un statut personnalisé, Ex : Je suis une licorne !</label>
-        </div>
-        <!-- <span>Timer actualisation du statut discord</span>
-        <select
-          v-model="refreshStatusTime"
-          name="refreshStatusVal"
-        >
-          <option
-            v-for="stc in refreshStatusVal"
-            :key="stc.id"
-            v-bind:value="{ time: stc.time, value: stc.value }"
-          >
-            {{ stc.value }}
-          </option>
-        </select> -->
-        <h1>Configuration de l'application</h1>
-        <div class="group">
-          <input
-            v-model="startup"
-            class="inputed"
-            name="two"
-            type="checkbox"
-          >
-          <label
-            class="labeler"
-            for="two"
-          >Démarrer l'application à l'ouverture de windows ? </label>
-        </div>
-        <span>Theme</span>
-        <select
-          v-model="theme"
-          name="refreshStatusVal"
-        >
-          <option
-            v-for="thm in themes"
-            :key="thm.id"
-            :value="thm"
-          >
-            {{ thm }}
-          </option>
-        </select>
-        <span>Raccourcis clavier</span>
-        <select
-          v-model="shortcut"
-          name="Shortcuts"
-        >
-          <option
-            v-for="stc in shortcuts"
-            :key="stc.id"
-            :value="stc ? stc : ''"
-          >
-            {{ stc ? stc : 'Selectionner une option' }}
-          </option>
-        </select>
-      </form>
-      
       <div class="wrapperBtn">
         <div class="btnGroup">
-          <button class="uk-button uk-button-primary save" @click="save">Sauvegarder</button>
-          <button class="uk-button uk-button-danger" @click="closeApp">Annuler</button>
+          <n-space>
+            <n-button type="success" @click="save">Sauvegarder</n-button>
+            <n-button type="error" @click="closeApp">Annuler</n-button>
+          </n-space>
         </div>
       </div>
     </section>
   </div>
+  <n-modal
+    v-model:show="panels.confirmation"
+    :mask-closable="false"
+    preset="confirm"
+    title="Redémarrage nécessaire"
+    content="Voulez-vous redémarrer?"
+    positive-text="Confirmer"
+    @positive-click="reboot"
+    @negative-click="!panels.confirmation"
+    negative-text="Annuler"
+  />
 </template>
 
 <script>
+import { defineComponent, ref } from 'vue'
 const electron = window.require ? window.require('electron') : null
-import { NSelect } from 'naive-ui'
+import { NForm, NSelect, NSpace, NCheckbox, NButton, NFormItem, NInput, NColorPicker, NDivider, NIcon, NModal  } from 'naive-ui'
+import { LogoDiscord, Person, Apps } from '@vicons/ionicons5'
 import settings from 'electron-settings';
-export default {
+export default defineComponent({
   name: 'Settings',
   components: {
-    NSelect
+    NForm,
+    NSelect,
+    NSpace,
+    NCheckbox,
+    NButton,
+    NFormItem,
+    NInput,
+    NColorPicker,
+    NDivider,
+    NIcon,
+    LogoDiscord,
+    Person,
+    Apps,
+    NModal
   },
   data () {
     return {
+      panels: {
+        confirmation: false,
+      },
+      isDarkness: null,
       nickname: '',
       startup: false,
       playingGame: true,
       shortcut: '',
+      appBoxed: null,
+      oldAppBoxed: null,
+      windows_color: "#202425E6",
       shortcuts: [
         {
           label: "Ctrl+G",
@@ -153,22 +145,50 @@ export default {
         { time: 5e3, value: "5s, Ok normal" },
         { time: 10e3, value: "10s, Toi, t'es pas pressé.." },
       ],
-      themes: ['dark', 'light'],
-      theme: '',
+      themes: [
+        {
+          label: "Sombre",
+          value: '#202425E6',
+          disabled: false
+        },
+        {
+          label: "Clair",
+          value: '#EEEEEE44',
+          disabled: false
+        }],
     }
   },
   mounted () {
     this.syncData()
+    
   },
   methods: {
+    deriveTheme(color) {
+      var c = color.substring(1).slice(0, -2);      // strip #
+      var rgb = parseInt(c , 16);   // convert rrggbb to decimal
+      var r = (rgb >> 16) & 0xff;  // extract red
+      var g = (rgb >>  8) & 0xff;  // extract green
+      var b = (rgb >>  0) & 0xff;  // extract blue
+
+      var luma = 0.2126 * r + 0.7152 * g + 0.0722 * b; // per ITU-R BT.709
+      if (luma < 40) {
+        this.isDarkness = true
+      } else {
+        this.isDarkness = false
+      }
+    },
     async syncData () {
       this.nickname = await settings.get('parameters.name');
       this.shortcut = await settings.get('parameters.trigger');
       this.startup = await settings.get('parameters.autostart');
+      this.appBoxed = await settings.get('parameters.boxed')
+      this.oldAppBoxed = await settings.get('parameters.boxed')
       this.customStatus = await settings.get('parameters.customStatus');
       this.refreshStatusTime = await settings.get('parameters.refreshStatusTime')
-      this.theme = await settings.get('parameters.theme_selected')
+      this.themeDarkess = await settings.get('parameters.themeDark')
       this.playingGame = await settings.get('parameters.showPlaying')
+      this.windows_color = await settings.get('parameters.windows_color')
+      this.deriveTheme(this.windows_color)
       console.log(this.playingGame)
     },
     async save () {
@@ -178,33 +198,60 @@ export default {
       await settings.set('parameters.trigger', this.shortcut);
       await settings.set('parameters.autostart', this.startup);
       await settings.set('parameters.customStatus', this.customStatus);
+      
       //await settings.set('parameters.refreshStatusTime', this.refreshStatusTime);
-      await settings.set('parameters.theme_selected', this.theme); 
       await settings.set('parameters.showPlaying', this.playingGame); 
-
-      electron.ipcRenderer.send('themeChanged', this.theme === 'dark' ? true : false)
-      electron.ipcRenderer.send('saveSettings')
+      await settings.set('parameters.windows_color', this.windows_color)
+      console.log('i edit: ' + this.windows_color)
+      this.$store.dispatch('SET_THEME', this.windows_color)
+      if(this.oldAppBoxed != this.appBoxed) {
+        this.panels.confirmation = true
+      } else {
+        setTimeout(() => {
+          electron.ipcRenderer.send('saveSettings', {theme: this.windows_color})
+        }, 200)
+      }
+      
+    },
+    async reboot() {
+      await settings.set('parameters.boxed', this.appBoxed)
+      electron.ipcRenderer.send('saveSettingsWithReboot', {theme: this.windows_color})
     },
     closeApp () {
       electron.ipcRenderer.send('closeSettings')
     }
   }
-}
+})
 </script>
 
 <style lang="scss" >
 @import '@/assets/style/global.scss';
 
+
+.n-divider__title {
+  opacity: 0.5;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size:0.7em;
+}
+.n-form-item .n-form-item-label {
+  opacity: 0.5;
+}
 .settings {
-  color: white;
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 10px;
   box-sizing: border-box;
   overflow-x: hidden;
-  background: #0d1117;
   font-family: 'Nunito', sans-serif;
+}
+
+.settings.dark {
+  background: #0d1117;
+}
+.settings.light {
+  background: #dddddd;
 }
 
 header.winbar {
@@ -218,7 +265,12 @@ header.winbar {
   vertical-align: middle;
   z-index: 999999;
   cursor: move;
-  background: #0d1117;
+  &.dark {
+    background: #0d1117;
+  }
+  &.light {
+    background: #dddddd;
+  }
 
   &:before {
     position: absolute;
@@ -227,83 +279,34 @@ header.winbar {
     width: 100%;
     height: 20px;
     left: 0;
-    background: linear-gradient(to bottom, rgba(13, 17, 23, .8), transparent);
   }
+  // Ajoute une ombre à l'header (pas sûr que ce soit réellement jouli en fait compte...)
+  // &.light:before {
+  //   background: linear-gradient(to bottom, rgba(197, 197, 197, 0.3), transparent);
+  // }
+  // &.dark:before {
+  //   background: linear-gradient(to bottom, rgba(13, 17, 23, .3), transparent);
+  // }
 
   .windowTitle {
     font-size: .8em;
-    font-weight: 200;
+    font-weight: 100;
     margin: auto auto auto 15px;
     text-transform: uppercase;
     font-family: 'Nunito', sans-serif;
-    color: rgba(255, 255, 255, 0.2);
+    color: rgb(28, 37, 48);
   }
 
   .btnClose {
     -webkit-app-region: no-drag;
-    color: rgba(255, 255, 255, 0.5);
+    opacity: 0.5;
     font-size: 2em;
     margin: auto 20px auto auto;
     cursor: pointer;
 
     &:hover {
-      color: white
+      opacity: 1;
     }
-  }
-}
-
-.group {
-  position: relative;
-  margin: 45px auto;
-  height: fit-content;
-}
-
-label.labeler {
-  color: #999;
-  font-size: 18px;
-  font-weight: normal;
-  position: absolute;
-  pointer-events: none;
-  left: 0;
-  top: 50%;
-  margin: 0 20px;
-  transform: translateY(-50%);
-  transition: 0.2s ease all;
-  -moz-transition: 0.2s ease all;
-  -webkit-transition: 0.2s ease all;
-
-  &.notEmpty {
-    top: -20px !important;
-    font-size: 14px;
-    color: white;
-  }
-}
-
-input[type=text].inputed {
-  display: block;
-  background: linear-gradient(to right, rgba(61, 123, 146, 0.18) 0%, rgba(54, 110, 130, 0.42) 100%);
-  border: none;
-  outline: none;
-  border-radius: 5px;
-  width: 100%;
-  font-size: 1.05em;
-  padding: 15px 24px;
-  box-sizing: border-box;
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: bolder;
-  letter-spacing: 1.1px;
-
-  &.active,
-  &:focus {
-    background: linear-gradient(to right, rgba(61, 123, 146, 0.18) 0%, rgba(54, 110, 130, 0.42) 100%);
-    animation: GameTileBorderGlow 0.2s forwards;
-    color: white;
-  }
-
-  &:focus~label {
-    top: -20px;
-    font-size: 14px;
-    color: white;
   }
 }
 
@@ -337,16 +340,12 @@ input[type=text].inputed {
   box-sizing: border-box;
 
   h1 {
-    padding: 24px 10px;
-    font-size: 1.5em;
+    padding: 12px 10px;
+    font-size: 1.1em;
     font-weight: 200;
-    margin-bottom: 20px;
+    margin-bottom: 0px;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.4);
-  }
-  p {
-    color: rgba(white, 10%);
-    font-size: 13px;
   }
 }
 
@@ -362,13 +361,8 @@ input[type=text].inputed {
     display: flex;
     margin: auto 0 auto auto;
     width:fit-content;
-  }
-  button { 
-    margin: auto 0 auto 10px;
-    pointer-events: all;
-    height: 100%;
-    &.save {
-      background:rgba(46, 204, 113, 1)
+    button {
+      pointer-events: all;
     }
   }
 }
