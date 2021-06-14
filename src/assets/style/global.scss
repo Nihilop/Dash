@@ -1,5 +1,7 @@
 @import "reset.scss";
 @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css");
+@import url('https://fonts.googleapis.com/css2?family=Paytone+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;900&display=swap');
 
 :root {
   --dark: #FFFFFF;
@@ -20,8 +22,7 @@ $accept : #27ae60;
 $theme: --dark;
 
 body, html {
-  font-family: 'Cabin', sans-serif;
-  font-family: "Segoe UI", sans-serif;
+  font-family: 'Roboto', sans-serif;
   font-weight: 500;
   line-height: 1;
   font-size: 17px;
@@ -31,6 +32,7 @@ body, html {
   padding: 0 !important;
   -webkit-font-smoothing: subpixel-antialized;
   overflow: hidden;
+  background: transparent !important;
   //background: linear-gradient( 135deg , rgba(26, 42, 48, 0.40) 0%, rgba(26, 42, 48, 0.70) 100%);
   // &:before {
   //   content: '';
@@ -43,7 +45,7 @@ body, html {
   // }
 }
 p, a, h1, h2, h3, h4, span, i {
-  color:var(--dark)
+  //color: var(--primary-color) //var(--dark)
 }
 @media (max-width: 960px) {
   body, html {

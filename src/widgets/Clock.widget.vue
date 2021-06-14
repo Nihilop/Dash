@@ -2,26 +2,30 @@
   <div
     id="clock"
   >
-    <p
+    <n-text depth="1"
       v-if="activeTime"
       class="time"
     >
       {{ time }}
-    </p>
-    <p
+    </n-text>
+    <n-text strong depth="3"
       v-if="activeDate"
       class="date"
     >
       {{ date }}
-    </p>
+    </n-text>
   </div>
 </template>
 
 <script>
 import { defineComponent } from 'vue'
+import { NText } from "naive-ui"
 var week = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
 export default defineComponent({
   name: 'Clock',
+  components: {
+    NText,
+  },
   props: {
     activeTime: { type: Boolean, default: true },
     activeDate: { type: Boolean, default: true }
@@ -54,7 +58,4 @@ export default defineComponent({
 })
 </script>
 <style lang="scss" scoped>
-.time {
-  font-weight: 200;
-}
 </style>

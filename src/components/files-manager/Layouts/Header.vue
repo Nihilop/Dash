@@ -4,48 +4,69 @@
     class="viewNav"
     :class="{scrollColor: scrollPosition > 50}"
   >
-    <button
+    <n-button text
       class="btn home"
       @click="backToHome()"
     >
-      <i class="bi bi-house" />
-    </button>
-    <button
+      <n-icon size="24">
+        <Home />
+      </n-icon>
+    </n-button>
+    <n-button text
       class="btn home"
       @click="refreshAction()"
     >
-      <i class="bi bi-arrow-repeat" />
-    </button>
+      <n-icon size="24">
+        <Reload />
+      </n-icon>
+    </n-button>
     <div>
-      <button
+      <n-button text
         class="btn"
         @click="showSidebar()"
       >
-        <i class="bi bi-gear-fill" />
-      </button>
-      <button
+        <n-icon size="24">
+          <SettingsSharp />
+        </n-icon>
+      </n-button>
+      <n-button text
         v-if="$store.state.listType == 'ListView'"
         class="btn"
         @click="onSelectListType('GridView')"
       >
-        <i class="bi bi-grid" />
-      </button>
-      <button
+        <n-icon size="24">
+          <Grid />
+        </n-icon>
+      </n-button>
+      <n-button text
         v-if="$store.state.listType == 'GridView'"
         class="btn"
         @click="onSelectListType('ListView')"
       >
-        <i class="bi bi-list-ul" />
-      </button>
+        <n-icon size="24">
+          <List />
+        </n-icon>
+      </n-button>
     </div>
   </div>
 </template>
 <script>
 import { defineComponent } from 'vue'
 const electron = window.require ? window.require('electron') : null
+import { NButton, NIcon } from 'naive-ui'
+import { Home, SettingsSharp, Reload, Grid, List } from '@vicons/ionicons5'
 
 export default defineComponent({
   name: 'Header',
+  components: {
+    NButton,
+    NIcon,
+    Home,
+    SettingsSharp,
+    Reload,
+    Grid, 
+    List
+  },
   data () {
     return {
       scrollPosition: null
@@ -94,7 +115,6 @@ export default defineComponent({
 </script>
 <style lang="scss" scoped>
 .viewNav {
-  position: -webkit-sticky;
   position: sticky;
   top: 0;
   display: flex;

@@ -184,15 +184,15 @@ import thumbnailPic from '@/components/files-manager/thumbnailPic.vue'
 import HeaderBar from './Header'
 import clickoutside from '@/directives/clickOutside'
 import { openDB } from 'idb'
-import { Promised } from 'vue-promised'
 const electron = window.require ? window.require('electron') : null
+import { Promised } from 'vue-promised'
 export default defineComponent({
   name: 'Grid',
   directives: { clickoutside },
   components: {
-    Promised,
     thumbnailPic,
-    HeaderBar
+    HeaderBar,
+    Promised,
   },
   props: {
     titleShowed: { type: Boolean, default: true },
@@ -279,6 +279,8 @@ export default defineComponent({
       const allKeys = await this.indexDbGame.getAllKeys(this.dbGmName)
 
       this.$store.dispatch('GAME_LIST', allItems)
+      
+      
       this.$store.dispatch('GAME_KEYS', allKeys)
     },
     async handleSaveFav (item) {

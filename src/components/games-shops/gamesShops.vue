@@ -23,7 +23,7 @@
     <transition-group tag="main" name="card" v-show="libs.epic">
       <article v-for="(game, index) in games.epic.currents" :key="index" class="card">
         <div class="image">
-          <img :src="game.keyImages[1].url" :alt="game.name" :class="{ active: isActive }" @load="isLoaded()">
+          <img :src="game.keyImages[1].url" :alt="game.name" :class="{ active: isActive }" @load="isLoaded()" @click="openSteamShop('https://www.epicgames.com/store/fr/p/' + game.productSlug)">
         </div>
         <div class="description">
           <h3 class="title">
@@ -36,7 +36,7 @@
       </article>
       <article v-for="(game, index) in games.epic.nexts" :key="index" class="card">
         <div class="image">
-          <img :src="game.keyImages[0].url" :alt="game.name" :class="{ active: isActive }" @load="isLoaded()">
+          <img :src="game.keyImages[0].url" :alt="game.name" :class="{ active: isActive }" @load="isLoaded()" @click="openSteamShop('https://www.epicgames.com/store/fr/p/' + game.productSlug)">
         </div>
 
         <div class="description">
@@ -174,6 +174,7 @@ export default defineComponent({
       getGames("FR").then(res => {
         this.games.epic.currents = res.currents
         this.games.epic.nexts = res.nexts
+        console.log(res.currents)
       }).catch(err => {
         console.log(err)
       });
